@@ -1,0 +1,24 @@
+{
+  "name": "retail-saas",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Multi-tenant retail POS SaaS (brand is config, see PLAN.md D5)",
+  "packageManager": "pnpm@12.11.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "check:brand": "node scripts/check-no-brand.mjs",
+    "ci": "pnpm check:brand && pnpm lint && pnpm typecheck && pnpm test",
+    "secrets:generate": "node scripts/generate-secrets.mjs"
+  },
+  "devDependencies": {
+    "turbo": "catalog:",
+    "typescript": "catalog:"
+  }
+}

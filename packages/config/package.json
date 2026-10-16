@@ -1,0 +1,23 @@
+{
+  "name": "@retail/config",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/next.json": "./tsconfig/next.json",
+    "./eslint": "./eslint/index.mjs"
+  },
+  "scripts": {
+    "typecheck": "echo \"no typescript in @retail/config\"",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "eslint": "catalog:",
+    "typescript-eslint": "catalog:"
+  },
+  "devDependencies": {
+    "vitest": "catalog:"
+  }
+}
