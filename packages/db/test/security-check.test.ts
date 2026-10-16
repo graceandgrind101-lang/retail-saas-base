@@ -245,6 +245,111 @@ describe("the check catches loosened schemas and roles (each restored afterwards
   });
 });
 
+describe("the check catches a weakened audit log (each change restored afterwards)", () => {
+  async function loosen(change: string, restore: string, scope: string): Promise<string[]> {
+    try {
+      await admin.unsafe(change);
+      return await problemsFor(scope);
+    } finally {
+      await admin.unsafe(restore);
+    }
+  }
+
+  it("a tenant table with no audit trigger", async () => {
+    const problems = await withBrokenTable("chk_no_audit", (n) => admin.unsafe(`drop trigger audit_row on app.${n}`).then(() => undefined));
+    expect(has(problems, "audit_row trigger is missing")).toBe(true);
+  });
+
+  it("a tenant table whose audit trigger skips deletes", async () => {
+    const problems = await withBrokenTable("chk_audit_no_delete", async (n) => {
+      await admin.unsafe(`drop trigger audit_row on app.${n}`);
+      await admin.unsafe(`create trigger audit_row after insert or update on app.${n} for each row execute function audit.record_row_change()`);
+    });
+    expect(has(problems, "audit_row trigger is missing")).toBe(true);
+  });
+
+  it("a tenant table whose audit trigger is switched off", async () => {
+    const problems = await withBrokenTable("chk_audit_off", (n) => admin.unsafe(`alter table app.${n} disable trigger audit_row`).then(() => undefined));
+    expect(has(problems, "audit_row trigger is missing")).toBe(true);
+  });
+
+  it("authenticated allowed to INSERT into the audit log", async () => {
+    const problems = await loosen("grant insert on audit.log to authenticated", "revoke insert on audit.log from authenticated", "audit.log");
+    expect(has(problems, "authenticated has INSERT")).toBe(true);
+  });
+
+  it("authenticated allowed to read the anchors", async () => {
+    const problems = await loosen("grant select on audit.anchors to authenticated", "revoke select on audit.anchors from authenticated", "audit.anchors");
+    expect(has(problems, "authenticated has SELECT")).toBe(true);
+  });
+
+  it("anon allowed to read the audit log", async () => {
+    const problems = await loosen("grant select on audit.log to anon", "revoke select on audit.log from anon", "audit.log");
+    expect(has(problems, "role anon has privileges")).toBe(true);
+  });
+
+  it("the owner given back the right to edit the log", async () => {
+    const problems = await loosen("grant update on audit.log to current_user", "revoke update on audit.log from current_user", "audit.log");
+    expect(has(problems, "the owner still has UPDATE")).toBe(true);
+  });
+
+  it("the audit log's tenant policy replaced by one that lets everything through", async () => {
+    const problems = await loosen(
+      "drop policy tenant_read on audit.log; create policy tenant_read on audit.log for select to authenticated using (true)",
+      "drop policy tenant_read on audit.log; create policy tenant_read on audit.log as permissive for select to authenticated using (tenant_id = (select private.ctx_tenant()))",
+      "audit.log",
+    );
+    expect(has(problems, "tenant_read USING is not tenant_id = ctx_tenant()")).toBe(true);
+  });
+
+  it("a second policy added to the audit log", async () => {
+    const problems = await loosen(
+      "create policy read_all on audit.log for select to authenticated using (true)",
+      "drop policy read_all on audit.log",
+      "audit.log",
+    );
+    expect(has(problems, "expected exactly one policy")).toBe(true);
+  });
+
+  it("row-level security switched off on the audit log", async () => {
+    const problems = await loosen("alter table audit.log disable row level security", "alter table audit.log enable row level security", "audit.log");
+    expect(has(problems, "row-level security is not enabled")).toBe(true);
+  });
+
+  it.each(["audit_log_immutable_rows", "audit_log_immutable_truncate"])("the append-only trigger %s switched off", async (trigger) => {
+    const problems = await loosen(`alter table audit.log disable trigger ${trigger}`, `alter table audit.log enable trigger ${trigger}`, "audit.log");
+    expect(has(problems, "append-only trigger")).toBe(true);
+  });
+
+  it("an owner-only audit function opened to authenticated", async () => {
+    const fn = "audit.record_event_for(uuid, text, jsonb)";
+    const problems = await loosen(`grant execute on function ${fn} to authenticated`, `revoke execute on function ${fn} from authenticated`, "function audit.record_event_for");
+    expect(has(problems, "owner-only audit function")).toBe(true);
+  });
+
+  it("an audit function opened to PUBLIC", async () => {
+    const fn = "audit.append(uuid, text, text, uuid, jsonb, jsonb)";
+    const problems = await loosen(`grant execute on function ${fn} to public`, `revoke execute on function ${fn} from public`, "function audit.append");
+    expect(has(problems, "PUBLIC can execute")).toBe(true);
+  });
+
+  it("a function the shop needs that it can no longer call", async () => {
+    const fn = "audit.record_event(text, jsonb)";
+    const problems = await loosen(`revoke execute on function ${fn} from authenticated`, `grant execute on function ${fn} to authenticated`, "function audit.record_event");
+    expect(has(problems, "lost access")).toBe(true);
+  });
+
+  it("a SECURITY DEFINER function with no fixed search_path", async () => {
+    try {
+      await admin.unsafe("create function private.zz_unsafe() returns int language sql security definer as 'select 1'");
+      const problems = await problemsFor("function private.zz_unsafe");
+      expect(has(problems, "SECURITY DEFINER without a fixed search_path")).toBe(true);
+    } finally {
+      await admin.unsafe("drop function if exists private.zz_unsafe()");
+    }
+  });
+});
+
 describe("the policy error SQLSTATE used above", () => {
   it("is what a tenant sees when an insert is blocked", () => {
     expect(PG.permissionDenied).toBe("42501");

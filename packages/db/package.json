@@ -13,7 +13,8 @@
     "test": "vitest run",
     "migrate": "tsx src/bin/migrate.ts",
     "generate": "drizzle-kit generate",
-    "check:db-security": "tsx src/bin/check-db-security.ts"
+    "check:db-security": "tsx src/bin/check-db-security.ts",
+    "anchor-audit": "tsx src/bin/anchor-audit.ts"
   },
   "devDependencies": {
     "@retail/config": "workspace:*",
@@ -28,6 +29,7 @@
     "@retail/core": "workspace:*",
     "drizzle-orm": "catalog:",
     "postgres": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "aws4fetch": "catalog:"
   }
 }

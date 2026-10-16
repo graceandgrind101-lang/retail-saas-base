@@ -37,12 +37,24 @@ export class InvalidRlsContextError extends Error {
 /** The handle passed to your query code. It is already scoped to one tenant. */
 export type RlsTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
+export interface RlsOptions {
+  /**
+   * Pass `true` for a transaction that will change data. It takes the tenant's audit lock
+   * FIRST, before any row is touched. Without it, two write transactions that touch the same
+   * rows in opposite orders can deadlock (each holds a row the other wants, plus the audit
+   * lock the other needs); Postgres then aborts one with SQLSTATE 40P01. Costs nothing for a
+   * transaction that writes anyway, because audited writes take that lock regardless.
+   * Leave it off for read-only requests so they never queue behind writers.
+   */
+  write?: boolean;
+}
+
 export interface TenantDb {
   /**
    * Run `fn` in one transaction that can only see and change `ctx.tenantId`'s rows.
    * This is the ONLY way tenant code reaches the database.
    */
-  rls<T>(ctx: RlsContext, fn: (tx: RlsTransaction) => Promise<T>): Promise<T>;
+  rls<T>(ctx: RlsContext, fn: (tx: RlsTransaction) => Promise<T>, options?: RlsOptions): Promise<T>;
   close(): Promise<void>;
 }
 
@@ -64,6 +76,7 @@ export async function runWithRls<T>(
   db: Database,
   ctx: RlsContext,
   fn: (tx: RlsTransaction) => Promise<T>,
+  options: RlsOptions = {},
 ): Promise<T> {
   assertValidContext(ctx);
   return db.transaction(async (tx) => {
@@ -77,6 +90,7 @@ export async function runWithRls<T>(
         set_config(${RLS_SETTINGS.impersonatorId}, ${ctx.impersonatorId ?? ""}, true),
         set_config(${RLS_SETTINGS.pinVerificationId}, ${ctx.pinVerificationId ?? ""}, true)
     `);
+    if (options.write) await tx.execute(sql`select audit.lock_tenant()`);
     // TODO(A8): before running `fn`, verify the session is active and the staff member is
     // `active` in this tenant, so a suspended cashier is locked out on their next request
     // (DATA_MODEL §2 step 3). Needs the staff and session tables from A7/A8.
@@ -88,7 +102,7 @@ export async function runWithRls<T>(
 export function createTenantDb(url: string, options?: ConnectionOptions): TenantDb {
   const { client, db } = connect(url, options);
   return {
-    rls: (ctx, fn) => runWithRls(db, ctx, fn),
+    rls: (ctx, fn, options) => runWithRls(db, ctx, fn, options),
     close: () => client.end(),
   };
 }

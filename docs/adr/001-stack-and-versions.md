@@ -52,6 +52,14 @@
 - **Test ordering must never hide a bad migration.** Vitest runs previously failed files first, and one test grants then revokes a privilege to prove the checker notices. A weakened migration was therefore "repaired" by that test before another test looked at it, and a mutation slipped through. The fix: the freshly migrated test database is verified once in `global-setup.ts`, before any test runs, and the run aborts if it is not secure.
 - **Mutation testing is part of how security rules are accepted** (CLAUDE.md). For A4, 12 deliberate weakenings of the migration and 8 of the TypeScript were applied one at a time and each had to be caught.
 
+## Findings from building A5 (audit log)
+
+- **drizzle-kit's `schemaFilter` does not stop it generating SQL for a table defined in TypeScript.** It only filters what is read from a live database. The audit table's TypeScript definition (for typed reading) was therefore picked up by `generate`, which tried to create `audit.log` a second time. `drizzle.config.ts` now lists schema files one by one and leaves `audit.ts` out; `schema-drift.test.ts` fails if that list is wrong, and also fails if a table is changed without a migration.
+- **`SECURITY DEFINER` functions must pin `search_path`.** Otherwise anyone who can create an object earlier on the path can hijack them. The security check now fails any definer function in `audit`, `private` or `app` without it.
+- **Row-level security on `audit.log` is enabled but not forced**, deliberately: the owner's definer functions are the only writers and must be able to insert even on a server where the owner does not have `BYPASSRLS` (the plain-Postgres case, D13).
+- **A shop's request that writes should open with `{ write: true }`.** Without it, the first audited write takes the tenant lock after row locks are already held, and two writers touching rows in opposite orders can deadlock (SQLSTATE 40P01). Demonstrated in a test, then fixed in another.
+- **Windows shell notes:** PowerShell strips double quotes from arguments passed to `docker exec`, so SQL containing JSON must be piped from a file; Python's `subprocess` needs `encoding="utf-8"` to read Vitest's output.
+
 ## Local development database
 
 - **Image:** `supabase/postgres:17.11.0.003` (pinned; 17.11.0.004 existed but was two days old). Same Postgres build as Supabase cloud, so roles (`anon`, `authenticated`, `service_role`) and pgTAP behave as in production. Started with `pnpm db:up` from `infra/dev-db/compose.yaml`, bound to `127.0.0.1:54322` only.

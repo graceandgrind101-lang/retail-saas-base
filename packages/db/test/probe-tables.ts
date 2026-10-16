@@ -14,12 +14,20 @@ function assertIdentifier(name: string): void {
 }
 
 /** Create `app.<name>` like a real tenant table, and secure it with the production function. */
-export async function createSecuredTable(admin: Sql, name: string, extraSql = ""): Promise<void> {
+export async function createSecuredTable(
+  admin: Sql,
+  name: string,
+  extraSql = "",
+  options: { ignore?: string[]; redact?: string[] } = {},
+): Promise<void> {
   assertIdentifier(name);
+  const list = (columns: string[] = []) => `array[${columns.map((c) => `'${c.replace(/'/g, "''")}'`).join(", ")}]::text[]`;
   await admin.unsafe(
     `create table app.${name} (${STANDARD_COLUMNS_SQL}${extraSql ? `, ${extraSql}` : ""}, unique (tenant_id, id))`,
   );
-  await admin.unsafe(`select private.secure_tenant_table('app.${name}')`);
+  await admin.unsafe(
+    `select private.secure_tenant_table('app.${name}', ${list(options.ignore)}, ${list(options.redact)})`,
+  );
 }
 
 export async function dropTables(admin: Sql, ...names: string[]): Promise<void> {

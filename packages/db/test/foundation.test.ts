@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import type { Sql } from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { inject } from "vitest";
@@ -18,10 +19,14 @@ afterAll(async () => {
 });
 
 describe("migrations", () => {
-  it("record both migrations and are safe to run again", async () => {
+  it("record every migration in the journal and are safe to run again", async () => {
     await runMigrations(inject("adminUrl"));
+    const journal = JSON.parse(readFileSync(new URL("../migrations/meta/_journal.json", import.meta.url), "utf8")) as {
+      entries: unknown[];
+    };
     const [row] = await admin<{ n: number }[]>`select count(*)::int as n from drizzle.__drizzle_migrations`;
-    expect(row?.n).toBe(2);
+    expect(journal.entries.length).toBeGreaterThanOrEqual(3);
+    expect(row?.n).toBe(journal.entries.length);
   });
 
   it("leave a database that passes the security check", async () => {

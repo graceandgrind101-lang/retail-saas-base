@@ -147,16 +147,21 @@ The Supabase Data API exposes **none** of these (M3).
 | `actor_kind` | staff, platform_admin, system, bot, customer |
 | `actor_id`, `impersonator_id`, `session_id`, `device_id`, `pin_verification_id` | From the request context (§2) |
 | `table_name`, `row_id` | For row events |
-| `before`, `after` | jsonb. For updates, changed columns only |
+| `before_data`, `after_data` | jsonb (named this way rather than `before`/`after`, which are SQL keywords). Insert: whole row in `after_data`. Delete: whole row in `before_data`. Update: only the columns that changed |
 | `txid` | |
-| `prev_hash`, `hash` | `hash = sha256(prev_hash ‖ canonical(row))` |
+| `prev_hash`, `hash` | `hash = sha256(prev_hash ‖ canonical(entry))`. The first entry's `prev_hash` is a per-tenant genesis hash, so one tenant's chain cannot be spliced into another's |
 
-- **Writing:** a trigger on every `app` table, plus `audit.record_event(...)` for non-row events. Each write takes a per-tenant `pg_advisory_xact_lock`, so `seq` and the hash chain stay in order. That's fine for shop-sized write volumes.
-- **Write-once:** UPDATE, DELETE and TRUNCATE are revoked and also blocked by a trigger.
-- **Noise:** updates that only touch `last_seen_at`-style columns are skipped (a per-table ignore list).
-- **Hashing input:** Postgres `jsonb::text` output is deterministic, so `audit.verify_chain(tenant_id)` in SQL is the reference verifier.
+**As built (migration 0002, task A5):**
+- **Writing:** an `audit_row` trigger (AFTER, per row) on every `app` table, attached by `private.secure_tenant_table()` so it cannot be forgotten. The trigger function and `audit.append()` run as the owner (`SECURITY DEFINER`, fixed `search_path`), because no tenant role may insert into the log. Non-row events (`auth.pin_failed`, `export.downloaded`, `settings.changed`) go through `audit.record_event(key, data)`, which always writes into the *current* tenant's chain and refuses `row.*` keys. Platform code uses the owner-only `audit.record_event_for(tenant, ...)`.
+- **Ordering:** each append takes a per-tenant `pg_advisory_xact_lock`, so `seq` is gapless and in commit order. A rolled-back transaction leaves no entry and no gap. Because that lock is otherwise first taken at the first audited write, two writers touching the same rows in opposite orders can deadlock; `db.rls(ctx, fn, { write: true })` takes the lock first and removes the hazard (tested both ways).
+- **Per-table options:** `secure_tenant_table(table, p_ignore, p_redact)`. *Ignored* columns: a change to only those is not recorded (`updated_at` is always ignored). *Redacted* columns (`pin_hash`, token hashes): recorded as `"[redacted]"`, so the log shows that a PIN changed but never its value. A column name that does not exist is an error, so a typo cannot silently audit the wrong thing.
+- **Actor:** an impersonating platform admin is recorded as `platform_admin`; otherwise a staff member as `staff`; with no request context, `system`. `bot` and `customer` need new context settings and arrive with those features.
+- **Write-once:** UPDATE, DELETE and TRUNCATE are revoked **even from the owner**, and triggers refuse them as well. A rogue administrator can still force it (re-grant, disable the trigger); the hash chain then shows exactly where, and the anchors show a rewrite or truncated tail.
+- **Hashing:** canonical text = a `jsonb` object of the entry's fields (jsonb prints keys in one fixed order), timestamps as whole microseconds since the epoch. A test pins a known input to a known hash and recomputes it with an independent SHA-256, so any change to the definition (or to how a future Postgres prints jsonb) fails loudly instead of silently invalidating every chain. `audit.verify_chain(tenant)` in SQL is the reference verifier.
+- **Reading:** a tenant session may `SELECT` only its own entries (RLS policy `tenant_read`; RLS is enabled but not forced, so the owner's definer functions can insert) and call `verify_own_chain()`. Who may *look* (`audit:view`) is decided by the permission resolver, not RLS.
+- **Not covered by a chain:** the newest entries being deleted. That is what anchors are for.
 
-**`audit.anchors`**: `tenant_id` · `seq` · `hash` · `anchored_at` · `object_key`. A nightly job writes each tenant's chain head to R2 with Object Lock.
+**`audit.anchors`**: `tenant_id` · `seq` · `hash` · `anchored_at` · `object_key` (owner-only, also append-only). A nightly job copies each tenant's chain head to an object store and records it here; `audit.verify_anchors(tenant)` compares every anchor with the log and reports "entries removed" or "history rewritten". The job refuses to anchor a chain that does not verify.
 
 ### 3.4 `private` schema
 - `private.ctx_tenant()`, `ctx_staff()`, `ctx_session()`: read the values `db.rls` set. They return null if a value is missing, so a query with no context sees **no rows** (fails closed).
