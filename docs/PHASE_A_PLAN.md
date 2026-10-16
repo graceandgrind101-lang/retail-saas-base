@@ -22,7 +22,7 @@
 
 | Task | Status | Notes |
 |---|---|---|
-| A0 Pre-flight | 🟡 partly done | ADR-001 written, versions pinned, pnpm installed, local git repo created. **Open:** Docker and Supabase CLI not installed (needed from A4); private GitHub repo and Cloudflare account not created yet |
+| A0 Pre-flight | 🟡 mostly done | ADR-001 written, versions pinned, pnpm installed, git repo + 2 local commits. **Docker Desktop 29.8.2 works; local dev database runs** (`pnpm db:up`: `supabase/postgres:17.11.0.003`, PostgreSQL 17.11, pgTAP 1.3.3). **Open:** first push to GitHub (needs the owner's one-time sign-in), Cloudflare account. Supabase CLI deliberately not installed yet: A4–A6 only need Postgres; the full Supabase stack (Auth) is for A7 |
 | A1 Monorepo skeleton | ✅ done 2026-10-16 | `pnpm run ci` + `pnpm build` green; db.admin lint rule proven with real ESLint; brand check proven to fail on a planted violation |
 | A2 Env and secrets | ✅ done 2026-10-16 | One Zod schema (`packages/core/src/env.ts`), boot hook (`apps/web/instrumentation.ts`), `.env.example`, `pnpm secrets:generate`. Verified on a real `next start`: no env → exit code 1 naming every missing variable; full env → HTTP 200; no secret value ever in logs. **Finding:** Next keeps a process alive after a failed boot hook (it just answers 500), so the hook now exits the process explicitly |
 | A3 Core primitives | ✅ done 2026-10-16 | `packages/core`: `Santim` money (parse, format, sum), quantities in thousandths, one rounding rule (half away from zero), tax-inclusive extraction (per rate group), cash rounding, UUIDv7 (monotonic, injectable clock/random). 153 tests, hand-checked 15% VAT values, property tests, and 5 deliberately injected bugs all caught |

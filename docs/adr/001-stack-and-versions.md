@@ -42,6 +42,12 @@
 - **`.env` files are read from `apps/web/`**, not the repo root. `NEXT_PUBLIC_*` values are frozen into the bundle at build time; server values are read at runtime.
 - **OpenNext / Cloudflare (task week-2 deploy):** whether `register()` runs there is unverified. `serverEnv()` also validates on first use, so a bad environment still fails closed. Check this on the first Workers deploy.
 
+## Local development database
+
+- **Image:** `supabase/postgres:17.11.0.003` (pinned; 17.11.0.004 existed but was two days old). Same Postgres build as Supabase cloud, so roles (`anon`, `authenticated`, `service_role`) and pgTAP behave as in production. Started with `pnpm db:up` from `infra/dev-db/compose.yaml`, bound to `127.0.0.1:54322` only.
+- **Role facts verified on the running image:** `postgres` is not a superuser but has `BYPASSRLS`; `authenticated` has neither. Row-level security is therefore only enforced after `set local role authenticated`, which is what `db.rls()` does (DATA_MODEL M3). Tests must go through that wrapper, never connect as `postgres` and expect RLS to apply.
+- **Why not the Supabase CLI for now:** A4-A6 need only Postgres. The CLI starts ~10 containers; we add it in A7 when Supabase Auth is needed.
+
 ## Not yet available on the dev machine
 
-Docker, the Supabase CLI and the GitHub CLI are not installed. Docker is required for the local database (task A4) and for A0's "`supabase start` runs locally" check. Everything up to A3 needs neither.
+The Supabase CLI and the GitHub CLI are not installed (Docker now is). Git pushes use Git Credential Manager (browser sign-in), so the GitHub CLI is not needed.
