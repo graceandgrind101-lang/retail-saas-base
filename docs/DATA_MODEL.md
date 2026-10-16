@@ -134,6 +134,8 @@ The Supabase Data API exposes **none** of these (M3).
 
 **`app.staff_permission_overrides`**: `tenant_id` · `staff_id` · `permission_key` · `effect enum(allow, deny)` · `reason text not null` · `granted_by` · `created_at`
 
+**As built (A9).** Migrations 0009 (the table) and 0010 (functions and guards). `app.staff_permission_overrides` as above, plus `granted_by`, a non-empty reason, one row per person and key, and a key-format check. `role_permissions` is filled from the core templates when a shop is created (the Owner has no rows: it holds everything by rule). `private.has_permission(tenant, staff, key)` is the database's copy of the resolver (deny, then allow, then owner, then role keys; inactive staff hold nothing; malformed keys are never held). Functions: `app.create_staff`, `set_staff_role`, `set_role_permission`, `set_override`, `remove_override`. Guards: direct writes by the shop's own login to `roles`, `role_permissions`, `staff_permission_overrides`, new `staff` rows and `staff.role_id` are refused; the last owner trigger and the owner-role trigger. See PLAN D33.
+
 **`app.devices`**: `id` · `tenant_id` · `branch_id` · `name text` ("Counter 1") · `kind enum(pos, phone, tablet, desktop)` · `token_hash text` · `paired_by` · `paired_at` · `last_seen_at` · `user_agent` · `revoked_at` · `revoked_by`
 
 **`app.device_pairing_codes`**: `id` · `tenant_id` · `branch_id` · `code_hash` · `created_by` · `expires_at` (10 min) · `used_at` · `used_by_device_id`. The code is single-use.

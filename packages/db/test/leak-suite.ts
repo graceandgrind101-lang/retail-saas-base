@@ -6,14 +6,33 @@ import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { createAdminDb, type AdminDb } from "../src/admin";
 import { runWithRls, type RlsContext, type RlsTransaction } from "../src/rls";
 import * as schema from "../src/schema";
-import { PG, adminSql, appSql, createTenant, expectPgError, pgCode } from "./helpers";
+import { PG, adminSql, appSql, createTenant, expectPgError, newId, pgCode, randomLetters } from "./helpers";
 
 /**
  * How to insert one valid row into a table for a given tenant. Self-contained: if the table
  * needs a parent row, the statement creates it too (a CTE), so it works for seeding AND as an
  * attack ("tenant A inserts a row that belongs to tenant B").
  */
-export type LeakFixture = (tenantId: string) => SQL;
+export type LeakFixture = (tenantId: string, parents: LeakParents) => SQL;
+
+/**
+ * Rows a fixture may point at, made for each tenant by the OWNER login before the suite starts.
+ * (A fixture cannot make them itself: some tables are written only through functions, so the
+ * shop's own login may not insert a role or a staff member directly.)
+ */
+export interface LeakParents {
+  roleId: string;
+  staffId: string;
+  branchId: string;
+}
+
+export interface LeakOptions {
+  /**
+   * The table is changed only through functions (migration 0010): the shop's own login must be
+   * refused a direct insert, in its own shop as well as another's.
+   */
+  functionsOnly?: boolean;
+}
 
 const TABLE_NAME = /^[a-z_][a-z0-9_]*$/;
 
@@ -22,7 +41,7 @@ const TABLE_NAME = /^[a-z_][a-z0-9_]*$/;
  * cross-tenant leak test"). Real tables register a fixture in test/leak-fixtures.ts and
  * all-tables.test.ts runs this suite for each.
  */
-export function leakSuite(table: string, fixture: LeakFixture): void {
+export function leakSuite(table: string, fixture: LeakFixture, options: LeakOptions = {}): void {
   if (!TABLE_NAME.test(table)) throw new Error(`unsafe table name: ${table}`);
   const qualified = `app.${table}`;
 
@@ -36,6 +55,16 @@ export function leakSuite(table: string, fixture: LeakFixture): void {
     let db: { rls<T>(ctx: RlsContext, fn: (tx: RlsTransaction) => Promise<T>): Promise<T> };
     let tenantA = "";
     let tenantB = "";
+    let parentsA: LeakParents;
+    let parentsB: LeakParents;
+
+    async function makeParents(tenantId: string): Promise<LeakParents> {
+      const parents = { roleId: newId(), staffId: newId(), branchId: newId() };
+      await admin`insert into app.roles (id, tenant_id, key, name) values (${parents.roleId}, ${tenantId}, ${randomLetters()}, '{"en": "Role"}'::jsonb)`;
+      await admin`insert into app.staff (id, tenant_id, display_name, role_id, status) values (${parents.staffId}, ${tenantId}, 'Staff member', ${parents.roleId}, 'active')`;
+      await admin`insert into app.branches (id, tenant_id, name) values (${parents.branchId}, ${tenantId}, '{"en": "Branch"}'::jsonb)`;
+      return parents;
+    }
 
     const countFor = async (tenantId: string) => {
       const [row] = await admin.unsafe<{ n: number }[]>(`select count(*)::int as n from ${qualified} where tenant_id = $1`, [tenantId]);
@@ -51,8 +80,10 @@ export function leakSuite(table: string, fixture: LeakFixture): void {
       const suffix = randomBytes(4).toString("hex");
       tenantA = await createTenant(admin, `leak-${suffix}-a`);
       tenantB = await createTenant(admin, `leak-${suffix}-b`);
-      await adminDb.db.execute(fixture(tenantA));
-      await adminDb.db.execute(fixture(tenantB));
+      parentsA = await makeParents(tenantA);
+      parentsB = await makeParents(tenantB);
+      await adminDb.db.execute(fixture(tenantA, parentsA));
+      await adminDb.db.execute(fixture(tenantB, parentsB));
     });
 
     afterAll(async () => {
@@ -95,13 +126,18 @@ export function leakSuite(table: string, fixture: LeakFixture): void {
 
     it("tenant A cannot insert a row that belongs to tenant B", async () => {
       const before = await countFor(tenantB);
-      await expectPgError(db.rls({ tenantId: tenantA }, (tx) => tx.execute(fixture(tenantB))), PG.permissionDenied);
+      await expectPgError(db.rls({ tenantId: tenantA }, (tx) => tx.execute(fixture(tenantB, parentsB))), PG.permissionDenied);
       expect(await countFor(tenantB)).toBe(before);
     });
 
-    it("tenant A can insert its own rows", async () => {
+    it(options.functionsOnly ? "tenant A cannot insert directly, even into its own shop (functions only)" : "tenant A can insert its own rows", async () => {
       const before = await countFor(tenantA);
-      await db.rls({ tenantId: tenantA }, (tx) => tx.execute(fixture(tenantA)));
+      if (options.functionsOnly) {
+        await expectPgError(db.rls({ tenantId: tenantA }, (tx) => tx.execute(fixture(tenantA, parentsA))), PG.permissionDenied);
+        expect(await countFor(tenantA)).toBe(before);
+        return;
+      }
+      await db.rls({ tenantId: tenantA }, (tx) => tx.execute(fixture(tenantA, parentsA)));
       expect(await countFor(tenantA)).toBe(before + 1);
     });
 

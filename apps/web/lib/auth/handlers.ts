@@ -8,6 +8,7 @@ import {
   acceptInvite,
   endMySession,
   getEnabledModules,
+  getMyPermissions,
   getMyStaff,
   getMyTenant,
   listMyShops,
@@ -145,16 +146,18 @@ export function createAuthHandlers(deps: AuthDeps) {
           const hadCookie = Boolean(parseCookieHeader(request.headers.get("cookie"))[sessionCookieName(deps.appUrl)]);
           return json(401, { error: "unauthenticated" }, hadCookie ? clearCookie : {});
         }
-        const { staff, tenant, modules } = await deps.db.rls(context, async (tx) => ({
+        const { staff, tenant, modules, permissions } = await deps.db.rls(context, async (tx) => ({
           staff: await getMyStaff(tx),
           tenant: await getMyTenant(tx),
           modules: await getEnabledModules(tx),
+          permissions: [...(await getMyPermissions(tx))].sort(),
         }));
         if (!staff || !tenant) throw new SessionEndedError();
         return json(200, {
           staff: { id: staff.staffId, name: staff.name, role: staff.roleKey, language: staff.language, calendar: staff.calendar, theme: staff.theme },
           tenant: { id: tenant.id, slug: tenant.slug, name: tenant.displayName, status: tenant.status, industry: tenant.industry, timezone: tenant.timezone, currency: tenant.currency },
           modules,
+          permissions,
         });
       }),
   };

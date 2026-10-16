@@ -49,6 +49,9 @@ async function shopWithInvite(prefix: string) {
     owner: { email, displayName: "Owner Person" },
   });
   if (!shop.ownerInvite) throw new Error("expected an invitation");
+  // A second owner, so tests can suspend the first (a shop can never lose its last owner).
+  await admin.sql`insert into app.staff (id, tenant_id, display_name, role_id, status)
+                  values (${newUuid()}, ${shop.tenantId}, 'Co-owner', ${shop.roleIds.owner}, 'active')`;
   return { ...shop, ownerEmail: email, inviteToken: shop.ownerInvite.token };
 }
 

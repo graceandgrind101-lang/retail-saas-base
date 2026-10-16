@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { sql } from "drizzle-orm";
 import type { Sql } from "postgres";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
-import { INDUSTRIES, RESERVED_TENANT_SLUGS } from "@retail/core";
+import { INDUSTRIES, RESERVED_TENANT_SLUGS, ROLE_TEMPLATE_PERMISSIONS } from "@retail/core";
 import { TenantProvisioningError, provisionTenant } from "../src/tenants";
 import { createTenantDb, type TenantDb } from "../src/rls";
 import { getEnabledModules, getMyTenant, isReadOnlyStatus, isShopReadOnlyError } from "../src/tenant-info";
@@ -329,8 +329,11 @@ describe("provisionTenant", () => {
 
     const log = await admin<{ seq: number; event_key: string; actor_kind: string; after_data: Record<string, unknown> }[]>`
       select seq::int as seq, event_key, actor_kind, after_data from audit.log where tenant_id = ${result.tenantId} order by seq`;
-    // the default branch and the five system roles, then the creation event
-    expect(log.map((e) => e.event_key)).toEqual([...Array(6).fill("row.insert"), "tenant.created"]);
+    // the default branch, the five system roles and what their templates grant, then the creation event
+    const granted = Object.values(ROLE_TEMPLATE_PERMISSIONS).reduce((n, keys) => n + keys.length, 0);
+    expect(log.map((e) => e.event_key)).toEqual([...Array(6 + granted).fill("row.insert"), "tenant.created"]);
+    const [grants] = await admin<{ n: number }[]>`select count(*)::int as n from app.role_permissions where tenant_id = ${result.tenantId}`;
+    expect(grants?.n).toBe(granted);
     expect(log.every((e) => e.actor_kind === "system")).toBe(true);
     expect(log.at(-1)?.after_data).toMatchObject({ slug, industry: "electronics", plan: "pro", ownerInvited: false });
     const [chain] = await admin<{ ok: boolean }[]>`select ok from audit.verify_chain(${result.tenantId})`;

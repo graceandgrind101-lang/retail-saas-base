@@ -102,3 +102,11 @@ The Supabase CLI and the GitHub CLI are not installed (Docker now is). Git pushe
 - A lock on the till covers everyone on it, as the plan says (staff and device both lock after 5), so an owner/manager needs a way to open it early: `app.unlock_device`.
 - Core has no Node or DOM types, so UTF-8 and base64url helpers live in `encoding.ts` and are reused by the PIN code.
 - Windows: long bash heredocs containing quotes failed repeatedly; scripts are written with the Write tool and run with Python.
+
+## Findings from building A9 (permissions)
+- A trigger that checks `current_user` is how to say "only through the functions": inside a `SECURITY DEFINER` function it is the function's owner, in a direct statement it is `authenticated`. Unlike a transaction setting it cannot be set by the caller.
+- The generic leak suite inserts parent rows (roles, staff) as the shop's own login, which the guards now refuse. Fixtures take parent rows made by the owner login, and a short list of "functions only" tables is asserted to refuse direct inserts instead.
+- The last-owner rule needs a per-shop advisory lock: without it two owners demoting each other in parallel transactions both see the other still active (write skew). A test fires the race three times.
+- Seeding the role templates writes about 90 audit rows per new shop (one per grant); the provisioning test computes the count from the templates.
+- Tests that suspend "the owner" now need a second owner; a shared helper adds one.
+- The permission registry holds keys of modules that are not built yet (dube, storefront, manufacturing, transfers), so owners get them automatically when those modules are switched on.

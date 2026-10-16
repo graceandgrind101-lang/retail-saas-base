@@ -41,6 +41,9 @@ async function shopWithOwnerInvite(prefix: string, ownerEmail = `owner-${suffix(
     owner: { email: ownerEmail, displayName: "Owner Person" },
   });
   if (!shop.ownerInvite) throw new Error("expected an invitation");
+  // A second owner, so tests can suspend the first (a shop can never lose its LAST owner; see permissions.test.ts).
+  await admin`insert into app.staff (id, tenant_id, display_name, role_id, status)
+              values (${newId()}, ${shop.tenantId}, 'Co-owner', ${shop.roleIds.owner}, 'active')`;
   return { ...shop, token: shop.ownerInvite.token, ownerEmail };
 }
 

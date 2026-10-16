@@ -5,6 +5,7 @@ export * from "./encoding";
 export * from "./env";
 export * from "./invite";
 export * from "./modules";
+export * from "./permissions";
 export * from "./pin";
 export * from "./money";
 export * from "./qty";

@@ -144,7 +144,12 @@ describe("route files export only what Next allows", () => {
       "devices/pin-sign-in/route.ts",
       "devices/revoke/route.ts",
       "devices/unlock/route.ts",
+      "roles/permissions/route.ts",
+      "staff/overrides/remove/route.ts",
+      "staff/overrides/route.ts",
       "staff/pin/route.ts",
+      "staff/role/route.ts",
+      "staff/route.ts",
       "step-up/route.ts",
     ]);
   });

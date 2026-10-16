@@ -2,6 +2,7 @@ import type { Sql } from "postgres";
 import {
   INDUSTRIES,
   INVITE_VALID_DAYS,
+  ROLE_TEMPLATE_PERMISSIONS,
   SYSTEM_ROLES,
   SYSTEM_ROLE_KEYS,
   defaultModulesFor,
@@ -21,7 +22,7 @@ import {
  * ONE transaction, so a shop either exists completely or not at all:
  *   the shop, its modules, its default branch, the five system roles, optionally the owner's
  *   invitation, and an audit entry saying who made it.
- * What each role may DO (its permissions) is added by task A9.
+ * What each role may DO (its permissions) comes from the core templates (A9).
  */
 
 /** Stored as data in the shop's own language(s); not an interface string. */
@@ -165,6 +166,16 @@ export async function provisionTenant(sql: Sql, input: ProvisionTenantInput): Pr
           insert into app.roles (id, tenant_id, key, name, is_system, template_key)
           values (${roleIds[key]}, ${tenantId}, ${key}, ${json(SYSTEM_ROLES[key].name)}::text::jsonb, true, ${key})`;
       }
+
+      // What each non-owner system role may do (core templates). The Owner holds every key of
+      // every enabled module by rule, so it stores nothing.
+      const grants = (Object.keys(ROLE_TEMPLATE_PERMISSIONS) as (keyof typeof ROLE_TEMPLATE_PERMISSIONS)[]).flatMap((role) =>
+        ROLE_TEMPLATE_PERMISSIONS[role].map((key) => ({ id: uuidv7(), role_id: roleIds[role], key })),
+      );
+      await tx`
+        insert into app.role_permissions (id, tenant_id, role_id, permission_key)
+        select g.id, ${tenantId}, g.role_id, g.key
+        from jsonb_to_recordset(${json(grants)}::text::jsonb) as g(id uuid, role_id uuid, key text)`;
 
       if (input.owner && ownerInvite) {
         // The invitation: only the token's hash is stored. Contact details are redacted in the

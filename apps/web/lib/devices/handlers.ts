@@ -2,15 +2,10 @@ import { z } from "zod";
 import { isUuid, parseCookieHeader, signSessionCookie } from "@retail/core";
 import {
   DEVICE_KINDS,
-  PinTooWeakError,
-  SessionEndedError,
-  StepUpInvalidError,
   createPairingCode,
   getDeviceInfo,
-  isShopReadOnlyError,
   listDeviceStaff,
   pairDevice,
-  pgErrorCode,
   pinSignIn,
   requestStepUp,
   revokeDevice,
@@ -26,7 +21,7 @@ import {
   deviceCookieName,
   sessionCookieHeader,
 } from "../auth/cookie";
-import { HttpError, jsonResponse, readJsonBody, readSessionContext, requireSameOrigin } from "../http";
+import { HttpError, apiErrorResponse, jsonResponse, readJsonBody, readSessionContext, requireSameOrigin } from "../http";
 
 /**
  * The device and PIN endpoints (Phase A task A8), as plain functions from `Request` to `Response`
@@ -90,23 +85,7 @@ export function createDeviceHandlers(deps: DeviceDeps) {
   const deviceToken = (request: Request): string | null =>
     parseCookieHeader(request.headers.get("cookie"))[deviceCookieName(deps.appUrl)] ?? null;
 
-  function errorResponse(error: unknown): Response {
-    if (error instanceof HttpError) return jsonResponse(error.status, { error: error.code });
-    if (error instanceof SessionEndedError) return jsonResponse(401, { error: "session_ended" }, clearSession);
-    if (error instanceof StepUpInvalidError) return jsonResponse(403, { error: "approval_invalid" });
-    if (error instanceof PinTooWeakError) return jsonResponse(400, { error: "pin_weak", problem: error.problem });
-    if (isShopReadOnlyError(error)) return jsonResponse(409, { error: "shop_read_only" });
-    switch (pgErrorCode(error)) {
-      case "42501":
-        return jsonResponse(403, { error: "forbidden" });
-      case "23514":
-        return jsonResponse(400, { error: "bad_request" });
-      default:
-        // Log the kind of failure only: messages can carry data.
-        console.error("device endpoint failed:", error instanceof Error ? error.name : "unknown error");
-        return jsonResponse(500, { error: "server_error" });
-    }
-  }
+  const errorResponse = (error: unknown): Response => apiErrorResponse(error, "device endpoint", clearSession);
 
   const guard = (fn: () => Promise<Response>): Promise<Response> => fn().catch(errorResponse);
 

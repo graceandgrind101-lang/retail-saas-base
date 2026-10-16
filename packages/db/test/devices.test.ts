@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { afterPinFailure, generatePairingCode, hashPin, hmacHex } from "@retail/core";
 import { PinTooWeakError, consumeStepUp, createPairingCode, getDeviceInfo, listDeviceStaff, pairDevice, pinSignIn, requestStepUp, revokeDevice, setStaffPin, unlockDevice, type Peppers } from "../src/devices";
 import { SessionEndedError, StepUpInvalidError } from "../src/errors";
+import { setOverride } from "../src/permissions";
 import { createTenantDb, type RlsContext, type TenantDb } from "../src/rls";
 import { acceptInvite, startSession } from "../src/sign-in";
 import { isShopReadOnlyError } from "../src/tenant-info";
@@ -520,7 +521,7 @@ describe("one-time PIN approval (step-up)", () => {
     const { manager, cashierCtx } = await scene("step2");
     const approval = await ask(cashierCtx, manager, "4829", "sale:below_floor");
     if (!approval.ok) throw new Error("expected approval");
-    await expect(spend(cashierCtx, approval.verificationId, "refund:approve")).rejects.toBeInstanceOf(StepUpInvalidError);
+    await expect(spend(cashierCtx, approval.verificationId, "refund:create")).rejects.toBeInstanceOf(StepUpInvalidError);
     await expect(spend(cashierCtx, approval.verificationId, "sale:below_floor_x")).rejects.toBeInstanceOf(StepUpInvalidError);
     expect(await spend(cashierCtx, approval.verificationId, "sale:below_floor")).toEqual({ approverId: manager });
   });
@@ -528,15 +529,15 @@ describe("one-time PIN approval (step-up)", () => {
   it("when bound to a record, only that record can spend it; unbound works for any", async () => {
     const { manager, cashierCtx } = await scene("step3");
     const record = newId();
-    const bound = await ask(cashierCtx, manager, "4829", "refund:approve", record);
+    const bound = await ask(cashierCtx, manager, "4829", "refund:create", record);
     if (!bound.ok) throw new Error("expected approval");
-    await expect(spend(cashierCtx, bound.verificationId, "refund:approve", newId())).rejects.toBeInstanceOf(StepUpInvalidError);
-    await expect(spend(cashierCtx, bound.verificationId, "refund:approve")).rejects.toBeInstanceOf(StepUpInvalidError);
-    expect(await spend(cashierCtx, bound.verificationId, "refund:approve", record)).toEqual({ approverId: manager });
+    await expect(spend(cashierCtx, bound.verificationId, "refund:create", newId())).rejects.toBeInstanceOf(StepUpInvalidError);
+    await expect(spend(cashierCtx, bound.verificationId, "refund:create")).rejects.toBeInstanceOf(StepUpInvalidError);
+    expect(await spend(cashierCtx, bound.verificationId, "refund:create", record)).toEqual({ approverId: manager });
 
-    const loose = await ask(cashierCtx, manager, "4829", "refund:approve");
+    const loose = await ask(cashierCtx, manager, "4829", "refund:create");
     if (!loose.ok) throw new Error("expected approval");
-    expect(await spend(cashierCtx, loose.verificationId, "refund:approve", newId())).toEqual({ approverId: manager });
+    expect(await spend(cashierCtx, loose.verificationId, "refund:create", newId())).toEqual({ approverId: manager });
   });
 
   it("only the session that asked can spend it (another cashier, or the manager, cannot)", async () => {
@@ -592,12 +593,12 @@ describe("one-time PIN approval (step-up)", () => {
 
   it("the audit log records whose PIN approved the action", async () => {
     const { shop, manager, cashierCtx } = await scene("step8");
-    const approval = await ask(cashierCtx, manager, "4829", "settings:change");
+    const approval = await ask(cashierCtx, manager, "4829", "product:edit_price");
     if (!approval.ok) throw new Error("expected approval");
     await db.rls(
       cashierCtx,
       async (tx) => {
-        await consumeStepUp(tx, { verificationId: approval.verificationId, actionKey: "settings:change" });
+        await consumeStepUp(tx, { verificationId: approval.verificationId, actionKey: "product:edit_price" });
         await tx.execute(sql`update app.branches set phone = '0911000000' where is_default`);
       },
       { write: true },
@@ -626,11 +627,26 @@ describe("one-time PIN approval (step-up)", () => {
     await expectPgError(admin`update app.pin_verifications set consumed_at = now() where id = ${id}`.then(() => undefined), PG.checkViolation);
   });
 
-  it("the action key must look like resource:action", async () => {
+  it("an action key that is not a permission cannot be approved by anyone, and costs the approver nothing", async () => {
     const { manager, cashierCtx } = await scene("step10");
-    for (const bad of ["", "refund", "Refund:Approve", "refund:", ":approve", "refund approve"]) {
-      await expectPgError(ask(cashierCtx, manager, "4829", bad).then(() => undefined), PG.checkViolation);
+    for (const bad of ["", "refund", "Refund:Approve", "refund:", ":approve", "refund approve", "nothing:real"]) {
+      expect(await ask(cashierCtx, manager, "4829", bad), bad).toEqual({ ok: false, reason: "cannot_approve" });
     }
+    expect(await counters("staff", manager)).toMatchObject({ count: 0 });
+  });
+
+  it("only someone who holds the action's permission can approve it (a cashier cannot approve a refund)", async () => {
+    const { shop, manager, cashierCtx } = await scene("step11");
+    const otherCashier = await addStaff(shop, "cashier", { pin: "5062" });
+    expect(await ask(cashierCtx, otherCashier, "5062", "refund:create")).toEqual({ ok: false, reason: "cannot_approve" });
+    expect(await counters("staff", otherCashier)).toMatchObject({ count: 0 });
+    expect((await ask(cashierCtx, manager, "4829", "refund:create")).ok).toBe(true);
+    // a personal deny takes it away from the manager
+    await db.rls(shop.owner, (tx) => setOverride(tx, { staffId: manager, key: "refund:create", effect: "deny", reason: "test" }), { write: true });
+    expect(await ask(cashierCtx, manager, "4829", "refund:create")).toEqual({ ok: false, reason: "cannot_approve" });
+    // and the owner (who holds everything) can approve
+    const owner = await addStaff(shop, "owner", { pin: "9185" });
+    expect((await ask(cashierCtx, owner, "9185", "refund:create")).ok).toBe(true);
   });
 });
 

@@ -50,6 +50,14 @@ export class StepUpInvalidError extends Error {
   }
 }
 
+/** The change would leave the shop without an owner. SQLSTATE RT008. */
+export class LastOwnerError extends Error {
+  constructor() {
+    super("A shop must keep at least one owner.");
+    this.name = "LastOwnerError";
+  }
+}
+
 export const isSessionEndedError = (error: unknown): boolean => error instanceof SessionEndedError || pgErrorCode(error) === "28000";
 
 /** Turn a raw database error into the matching application error; anything else is returned unchanged. */
@@ -65,6 +73,8 @@ export function translateAuthError(error: unknown): unknown {
       return new NoShopAccessError();
     case "RT007":
       return new StepUpInvalidError();
+    case "RT008":
+      return new LastOwnerError();
     default:
       return error;
   }

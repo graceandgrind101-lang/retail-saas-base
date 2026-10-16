@@ -237,7 +237,7 @@ export async function requestStepUp(
   input: { approverId: string; pin: string; actionKey: string; entityId?: string; pinPepper: string },
 ): Promise<StepUpResult> {
   const begun = await tx.execute<{ status: string; pin_hash: string | null }>(
-    sql`select status, pin_hash from app.step_up_begin(${input.approverId}::uuid)`,
+    sql`select status, pin_hash from app.step_up_begin(${input.approverId}::uuid, ${input.actionKey})`,
   );
   const b = begun[0];
   if (!b) throw new Error("app.step_up_begin returned nothing");

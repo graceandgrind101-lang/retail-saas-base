@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { adminSql } from "./helpers";
-import { leakFixtures } from "./leak-fixtures";
+import { FUNCTIONS_ONLY_TABLES, leakFixtures } from "./leak-fixtures";
 import { leakSuite } from "./leak-suite";
 
 // Every real table in `app`, read from the migrated database itself. Sorting first makes the
@@ -29,5 +29,5 @@ describe("every tenant table is covered by a cross-tenant leak test (CLAUDE.md r
 
 for (const table of tables) {
   const fixture = leakFixtures[table];
-  if (fixture) leakSuite(table, fixture);
+  if (fixture) leakSuite(table, fixture, { functionsOnly: FUNCTIONS_ONLY_TABLES.has(table) });
 }

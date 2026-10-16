@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import { parseCookieHeader, readSessionCookie } from "@retail/core";
-import type { RlsContext } from "@retail/db";
+import { LastOwnerError, PinTooWeakError, SessionEndedError, StepUpInvalidError, isShopReadOnlyError, pgErrorCode, type RlsContext } from "@retail/db";
 import { sessionCookieName } from "./auth/cookie";
 
 /**
@@ -63,4 +63,27 @@ export async function readSessionContext(
     sessionId: payload.sessionId,
     ...(payload.deviceId ? { deviceId: payload.deviceId } : {}),
   };
+}
+
+/**
+ * One mapping from what can go wrong to what the browser is told: a status and a short, fixed
+ * code. `clearSession` is sent when the sign-in is over. Anything unexpected is logged by kind
+ * only (messages can carry data) and answered with a plain 500.
+ */
+export function apiErrorResponse(error: unknown, label: string, clearSession: Record<string, string>): Response {
+  if (error instanceof HttpError) return jsonResponse(error.status, { error: error.code });
+  if (error instanceof SessionEndedError) return jsonResponse(401, { error: "session_ended" }, clearSession);
+  if (error instanceof StepUpInvalidError) return jsonResponse(403, { error: "approval_invalid" });
+  if (error instanceof PinTooWeakError) return jsonResponse(400, { error: "pin_weak", problem: error.problem });
+  if (error instanceof LastOwnerError) return jsonResponse(409, { error: "last_owner" });
+  if (isShopReadOnlyError(error)) return jsonResponse(409, { error: "shop_read_only" });
+  switch (pgErrorCode(error)) {
+    case "42501":
+      return jsonResponse(403, { error: "forbidden" });
+    case "23514":
+      return jsonResponse(400, { error: "bad_request" });
+    default:
+      console.error(`${label} failed:`, error instanceof Error ? error.name : "unknown error");
+      return jsonResponse(500, { error: "server_error" });
+  }
 }

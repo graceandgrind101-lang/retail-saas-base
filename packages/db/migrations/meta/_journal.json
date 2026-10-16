@@ -64,6 +64,20 @@
       "when": 1792154305695,
       "tag": "0008_device_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792159619260,
+      "tag": "0009_permission_overrides",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792159621526,
+      "tag": "0010_permission_functions",
+      "breakpoints": true
     }
   ]
 }
