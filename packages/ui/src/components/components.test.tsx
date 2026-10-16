@@ -259,6 +259,24 @@ describe("Sheet", () => {
     expect(opener).toHaveFocus();
   });
 
+  it("can put focus somewhere else on opening, such as a search box", () => {
+    render(
+      <Sheet open onClose={() => {}} title="Search" closeLabel="Close" initialFocus="input">
+        <input aria-label="query" />
+      </Sheet>,
+    );
+    expect(screen.getByLabelText("query")).toHaveFocus();
+  });
+
+  it("falls back to the first control if the wanted one is not there", () => {
+    render(
+      <Sheet open onClose={() => {}} title="Search" closeLabel="Close" initialFocus=".nope">
+        <input aria-label="query" />
+      </Sheet>,
+    );
+    expect(screen.getByRole("button", { name: "Close" })).toHaveFocus();
+  });
+
   it("Escape and the close button and a tap outside all close it", async () => {
     const onClose = vi.fn();
     render(<Harness onClose={onClose} />);

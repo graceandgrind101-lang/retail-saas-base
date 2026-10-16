@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "./icon";
@@ -8,6 +10,8 @@ export interface SheetProps {
   title: string;
   /** The accessible name of the close button, in the person's language. */
   closeLabel: string;
+  /** What to focus on opening, as a CSS selector inside the panel (a search box, say). Default: the first control, the close button. */
+  initialFocus?: string;
   /** From the bottom on a phone, from the right on a wide screen (the side panel opens a record without leaving the list). */
   children: ReactNode;
 }
@@ -19,7 +23,7 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
  * the page behind cannot be reached, Tab stays inside, Escape or a tap outside closes it, and
  * focus returns to where it was when it closes.
  */
-export function Sheet({ open, onClose, title, closeLabel, children }: SheetProps) {
+export function Sheet({ open, onClose, title, closeLabel, initialFocus, children }: SheetProps) {
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
 
@@ -28,13 +32,14 @@ export function Sheet({ open, onClose, title, closeLabel, children }: SheetProps
     const before = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const wanted = initialFocus ? panel.current?.querySelector<HTMLElement>(initialFocus) : null;
     const first = panel.current?.querySelector<HTMLElement>(FOCUSABLE);
-    (first ?? panel.current)?.focus();
+    (wanted ?? first ?? panel.current)?.focus();
     return () => {
       document.body.style.overflow = overflow;
       before?.focus?.();
     };
-  }, [open]);
+  }, [open, initialFocus]);
 
   if (!open || typeof document === "undefined") return null;
 

@@ -1,0 +1,440 @@
+/*
+ * The two shells (Phase A task A13, docs/SCREENS.md §1): the admin app and the till (POS).
+ * Phone first. At 1024px and wider the admin app gets its sidebar and right rail and the bottom
+ * tabs go away.
+ */
+
+.skip-link {
+  position: absolute;
+  top: -4rem;
+  left: var(--space-2);
+  z-index: 100;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-1);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.skip-link:focus {
+  top: var(--space-2);
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+.shell-banner {
+  padding: var(--space-2) var(--space-4);
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+  font-weight: 600;
+  text-align: center;
+}
+.shell-frame {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+.shell-column {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.shell-main {
+  flex: 1;
+  padding: var(--space-4);
+  /* room for the bottom tabs on a phone */
+  padding-bottom: calc(var(--tap-lg) + var(--space-8));
+}
+.shell-main:focus {
+  outline: none;
+}
+
+/* ── top bar ─────────────────────────────────────────── */
+.shell-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 3.5rem;
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.shell-topbar-title {
+  flex: 1;
+  min-width: 0;
+}
+.shell-shop {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-2);
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+.shell-shop:hover {
+  background: var(--surface-2);
+}
+.shell-shop span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shell-search kbd {
+  display: none;
+}
+
+/* ── bell with its count ─────────────────────────────── */
+.shell-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  border-radius: var(--radius-2);
+  color: var(--text);
+  text-decoration: none;
+}
+.shell-bell:hover {
+  background: var(--surface-2);
+}
+.shell-bell-count {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.05rem;
+  min-width: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--cat-suspicion-fg);
+  color: var(--surface);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  text-align: center;
+}
+.shell-bell[data-fraud="true"] .shell-bell-count {
+  background: var(--cat-fraud-fg);
+}
+
+/* ── menu links ──────────────────────────────────────── */
+.shell-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.shell-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-2);
+  color: var(--text);
+  text-decoration: none;
+}
+.shell-link:hover {
+  background: var(--surface-2);
+}
+.shell-link[aria-current="page"] {
+  background: var(--surface-2);
+  font-weight: 700;
+}
+.shell-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-4);
+}
+.shell-group-label {
+  padding: 0 var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--font-size-1);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.shell-group .ui-module-heading {
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-2);
+}
+
+/* ── sidebar and rail: desktop only ──────────────────── */
+.shell-sidebar,
+.shell-rail {
+  display: none;
+}
+
+/* ── bottom tabs: phone only ─────────────────────────── */
+.shell-tabs {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+.shell-tab {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-width: 0;
+  min-height: var(--tap-lg);
+  padding: var(--space-1);
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-1);
+  text-decoration: none;
+  cursor: pointer;
+}
+.shell-tab span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shell-tab[aria-current="page"] {
+  color: var(--link);
+  font-weight: 700;
+}
+
+/* ── command palette ─────────────────────────────────── */
+.shell-palette-input {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+}
+.shell-palette-list {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ── account sheet ───────────────────────────────────── */
+.shell-account {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.shell-account-who {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.shell-account-who small {
+  color: var(--text-muted);
+}
+.shell-prefs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.shell-prefs label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-weight: 600;
+}
+
+/* ── till ────────────────────────────────────────────── */
+.pos-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 3.5rem;
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.pos-header-who {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+/* ── sign-in ─────────────────────────────────────────── */
+.signin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 26rem;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4);
+}
+.signin-people {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.signin-person {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--tap-lg);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+  font-size: var(--font-size-3);
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+.signin-person:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.signin-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.signin-form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-weight: 600;
+}
+.signin-form input {
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+}
+.signin-notice {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-2);
+  background: var(--note-bg);
+  color: var(--note-fg);
+}
+.signin-dev {
+  padding-top: var(--space-4);
+  border-top: 1px dashed var(--border);
+}
+
+/* ── alerts screen ───────────────────────────────────── */
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.alert-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: var(--tap-lg);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+  text-align: start;
+  cursor: pointer;
+}
+.alert-row:hover {
+  background: var(--surface-2);
+}
+.alert-row small {
+  color: var(--text-muted);
+}
+.alert-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.alert-detail textarea {
+  min-height: 5rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+  font: inherit;
+}
+
+/* ── wide screens ────────────────────────────────────── */
+@media (min-width: 1024px) {
+  .shell-tabs:not([data-always="true"]) {
+    display: none;
+  }
+  .shell-tabs[data-always="true"] {
+    right: 0;
+    left: 0;
+  }
+  .shell-main {
+    padding: var(--space-5);
+  }
+  .shell-sidebar {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    width: 16rem;
+    height: 100dvh;
+    overflow-y: auto;
+    padding: var(--space-3);
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .shell-rail {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    width: 4.5rem;
+    height: 100dvh;
+    padding: var(--space-3) 0;
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .shell-topbar .shell-shop,
+  .shell-topbar .shell-bell {
+    display: none;
+  }
+  .shell-search {
+    gap: var(--space-2);
+    padding: 0 var(--space-3);
+  }
+  .shell-search kbd {
+    display: inline;
+    padding: 0 var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-1);
+    background: var(--surface-2);
+    font-size: var(--font-size-1);
+  }
+}

@@ -60,7 +60,10 @@
     "approval_invalid": "This approval is not valid or has expired.",
     "cannot_approve": "This person cannot approve this action.",
     "last_owner": "A shop must keep at least one owner.",
-    "shop_read_only": "This shop is paused. You can look but not change anything."
+    "shop_read_only": "This shop is paused. You can look but not change anything.",
+    "not_found": "This is not available.",
+    "no_demo_shop": "There is no demo shop yet. Run: pnpm dev:seed",
+    "network": "No connection. Check the network and try again."
   },
   "pin": {
     "title": "Enter your PIN",
@@ -226,5 +229,100 @@
     "title": "Home",
     "today": "Today is {date}",
     "pick": "Choose your language and calendar"
+  },
+  "shell": {
+    "skipToContent": "Skip to the main content",
+    "navigation": "Main menu",
+    "openMenu": "Open the menu",
+    "closeMenu": "Close the menu",
+    "search": "Search",
+    "searchPlaceholder": "Find a page…",
+    "noResults": "Nothing found",
+    "shop": "Shop",
+    "signedInAs": "Signed in as {name}",
+    "signOut": "Sign out",
+    "more": "More",
+    "help": "Help",
+    "alertsBell": "Alerts",
+    "alertsBellCount": "{count, plural, one {Alerts, # open} other {Alerts, # open}}",
+    "impersonating": "A member of our support team is looking at {shop}",
+    "notBuilt": "This page is not built yet.",
+    "configuration": "Configuration",
+    "preferences": "Display",
+    "theme": {
+      "label": "Theme",
+      "system": "Same as the device",
+      "light": "Light",
+      "dark": "Dark"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "alerts": "Alerts",
+    "sell": "Sell",
+    "sales": "Sales",
+    "shifts": "Shifts",
+    "products": "Products",
+    "receive": "Receive",
+    "counts": "Counts",
+    "suppliers": "Suppliers",
+    "payments": "Payments",
+    "customers": "Customers",
+    "reports": "Reports",
+    "staff": "Staff",
+    "devices": "Devices",
+    "settings": "Settings"
+  },
+  "pos": {
+    "tabs": {
+      "sell": "Sell",
+      "today": "Today",
+      "parked": "Parked",
+      "more": "More"
+    },
+    "cashier": "Cashier: {name}",
+    "lock": "Lock",
+    "idleLocked": "Locked for safety after a quiet moment.",
+    "placeholder": "The sale screen arrives in the next phase.",
+    "openAdmin": "Open the admin app"
+  },
+  "signIn": {
+    "title": "Sign in",
+    "pairTitle": "Connect this device",
+    "pairIntro": "Connect this device to the shop with the code a manager gives you.",
+    "code": "Code",
+    "deviceName": "Name of this device",
+    "deviceNameHint": "For example Counter 1",
+    "kind": "Kind of device",
+    "kinds": {
+      "pos": "Till",
+      "phone": "Phone",
+      "tablet": "Tablet",
+      "desktop": "Computer"
+    },
+    "pair": "Connect",
+    "whoAreYou": "Who are you?",
+    "changePerson": "Someone else",
+    "locked": "Locked",
+    "noStaff": "Nobody can sign in on this device yet. Ask a manager to set a PIN for you.",
+    "devHeading": "Developer sign-in",
+    "devOwner": "Sign in as the demo owner",
+    "adminSoon": "Signing in with an account (email or Google) arrives with the account setup. Until then, use a connected device and a PIN."
+  },
+  "alertsScreen": {
+    "empty": "No open alerts.",
+    "showClosed": "Show closed alerts",
+    "detail": "Alert details",
+    "when": "When",
+    "note": "Note",
+    "notePlaceholder": "A note (optional)",
+    "saved": "Saved",
+    "closedBy": "Closed"
+  },
+  "homeScreen": {
+    "welcome": "Hello, {name}",
+    "alertsTitle": "Open alerts",
+    "nothingOpen": "Nothing needs your attention.",
+    "seeAlerts": "See alerts"
   }
 }

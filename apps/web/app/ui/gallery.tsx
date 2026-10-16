@@ -19,7 +19,6 @@ import {
   SkeletonText,
   Tabs,
   Tile,
-  ToastProvider,
   setThemePreference,
   useToast,
   type PaymentMethod,
@@ -37,7 +36,7 @@ export function Gallery() {
   const [submitted, setSubmitted] = useState("");
 
   return (
-    <ToastProvider dismissLabel="Dismiss">
+    <>
       <main className="ui-page ui-stack" data-testid="gallery">
         <h1>Components</h1>
 
@@ -130,6 +129,6 @@ export function Gallery() {
           <Button label="Save" icon="check" onClick={() => setSheet(false)} />
         </Sheet>
       </main>
-    </ToastProvider>
+    </>
   );
 }

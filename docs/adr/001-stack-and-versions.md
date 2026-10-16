@@ -134,3 +134,13 @@ The Supabase CLI and the GitHub CLI are not installed (Docker now is). Git pushe
 - `<output>` elements have the `status` role, so a test for the toast region selects it by its class, not by role.
 - `next-intl`, `@swc/core` and `@parcel/watcher` scripts stay denied; Playwright's own install script is denied too (browsers are installed explicitly).
 - Mutation testing of the UI logic: 76 weakenings, 71 caught first time; 1 real gap (toast tone) got a test, 4 were redundant guards (for example an empty value plus "0" is "0" either way).
+
+## Findings from building A13 (the shells)
+- Files in a package that use React state or context (`createContext`, hooks) need `"use client"` at the top, or a server page that imports anything from the package fails the build, even if it only uses a plain component. Toast, Sheet, Tabs, the pads and the idle hook are marked.
+- The React lint rules (`set-state-in-effect`) rejected two natural patterns: resetting a search box in an effect when it closes (now reset when it closes) and copying the page's theme into state (now read through `useSyncExternalStore`).
+- A browser accessibility scan taken while a panel is still sliding in measures the half-transparent panel and reports false contrast failures. The browser tests run with reduced motion (the app honours it), so animations finish at once.
+- Each browser test builds its own shop (with a pairing code) in a throwaway database, and sets its own client address, because pairing is rate-limited per address; five wrong PINs lock a person, so tests must not share people.
+- The first run of the real-browser tests found: a plain link 21px tall (links now have a thumb-sized class), a search box that did not take focus on opening (Sheet now accepts a focus target), and two toast regions on one page (the provider lives once, in the root layout).
+- Root-layout translated error codes are checked by scanning the API sources: a new error code with no message fails a test, which found four.
+- The shop's own language for its name (`pickText`) falls back to English, then to anything, then to empty; it never throws.
+- A mutation battery found two test gaps: a "does not exist" test that passed by coincidence because a missing demo shop is also a 404 (the shop now exists for every test), and an idle timer test that never woke the page after it had locked.

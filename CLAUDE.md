@@ -24,6 +24,7 @@ This is a multi-tenant retail POS SaaS for Ethiopian shops. **Current stage: Pha
 - **No SaaS brand name in code.** The brand is config. Neil Lewz will be tenant #1.
 - **Money and security rules live in `packages/core`** and must be unit-tested. Core is pure: no I/O, no env, no DOM or Node types; it takes inputs as arguments.
 - **Secrets:** never in code, docs, chat or git. Only `.env.example` files are tracked. The app refuses to boot on a missing or weak secret.
+- **Trying it locally:** `pnpm db:up`, `pnpm dev:setup`, `pnpm dev:seed`, `pnpm dev` (docs/LOCAL_TESTING.md). Browser tests: `pnpm --filter @retail/web e2e` (needs `pnpm db:up`).
 - **Shell:** PowerShell and bash both exist here. Long multi-line files are safer written with the Write tool than with bash heredocs.
 - **Every tenant table** has `tenant_id` and RLS, and is covered by a cross-tenant leak test.
 

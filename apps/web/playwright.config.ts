@@ -1,14 +1,24 @@
 import { defineConfig, devices } from "@playwright/test";
+import { TEST_APP_PASSWORD } from "@retail/db/testing";
 
 // Real-browser checks (`pnpm --filter @retail/web e2e`). The app is built and started the way it runs
-// in production; the component gallery is switched on for it with ENABLE_UI_GALLERY.
+// in production, against its own throwaway database (needs `pnpm db:up`). The component gallery is
+// switched on for it, and the till locks itself after 4 quiet seconds so that can be tested.
 const PORT = 3113;
+const DATABASE = "retail_test_e2e";
+const ADMIN_URL = process.env.TEST_DATABASE_ADMIN_URL ?? "postgresql://postgres:postgres@127.0.0.1:54323/postgres";
+const appUrl = new URL(ADMIN_URL);
+appUrl.username = "retail_app";
+appUrl.password = TEST_APP_PASSWORD;
+appUrl.pathname = `/${DATABASE}`;
 
 export default defineConfig({
   testDir: "./e2e",
+  globalSetup: "./e2e/global-setup.ts",
   fullyParallel: true,
   reporter: [["list"]],
-  use: { baseURL: `http://localhost:${PORT}` },
+  // animations are shortened (the app honours reduced-motion), so a scan never catches a panel half way in
+  use: { baseURL: `http://localhost:${PORT}`, reducedMotion: "reduce" },
   projects: [
     { name: "phone", use: { ...devices["Pixel 7"] } },
     { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } } },
@@ -20,10 +30,13 @@ export default defineConfig({
     reuseExistingServer: false,
     env: {
       ENABLE_UI_GALLERY: "1",
+      // a production server refuses to start with the developer sign-in on; pin it off even if apps/web/.env.local turns it on
+      ALLOW_DEV_SIGN_IN: "",
+      POS_IDLE_LOCK_SECONDS: "4",
       NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key-0123456789-abcdefghij",
       NEXT_PUBLIC_APP_URL: `http://localhost:${PORT}`,
-      DATABASE_URL: "postgres://retail_app:x@127.0.0.1:54322/postgres",
+      DATABASE_URL: appUrl.toString(),
       SUPABASE_SERVICE_ROLE_KEY: "service-role-key-0123456789-ABCDEFGHIJ",
       SESSION_SECRET: "k3Jf9aQ2xLm7ZpR1tVb8nWc4yHd6sGu0",
       PIN_PEPPER: "Qw8eRt5yUi2oPa7sDf4gHj1kLz9xCv3b",

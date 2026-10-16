@@ -7,6 +7,6 @@ export default defineConfig([
   ...nextVitals,
   ...nextTs,
   // db.admin: only cron jobs under jobs/ and test files may import it (PLAN.md §2.4). Production code may not.
-  ...createRules({ allowDbAdminIn: ["jobs/**", "test/**", "**/*.test.ts"] }),
+  ...createRules({ allowDbAdminIn: ["jobs/**", "test/**", "e2e/**", "**/*.test.ts"] }),
   globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
 ]);

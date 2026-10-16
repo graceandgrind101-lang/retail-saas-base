@@ -34,8 +34,10 @@ export interface Peppers {
 }
 
 // Separate prefixes so a value of one kind can never be mistaken for the other.
-const pairingCodeHash = (pepper: string, code: string) => hmacHex(pepper, `pairing-code:${code}`);
-const deviceTokenHash = (pepper: string, token: string) => hmacHex(pepper, `device-token:${token}`);
+export const hashPairingCode = (pepper: string, code: string): Promise<string> => hmacHex(pepper, `pairing-code:${code}`);
+export const hashDeviceToken = (pepper: string, token: string): Promise<string> => hmacHex(pepper, `device-token:${token}`);
+const pairingCodeHash = hashPairingCode;
+const deviceTokenHash = hashDeviceToken;
 
 export type DeviceKind = "pos" | "phone" | "tablet" | "desktop";
 export const DEVICE_KINDS: readonly DeviceKind[] = ["pos", "phone", "tablet", "desktop"];
@@ -98,6 +100,12 @@ export async function revokeDevice(tx: RlsTransaction, deviceId: string): Promis
 export async function unlockDevice(tx: RlsTransaction, deviceId: string): Promise<boolean> {
   const rows = await tx.execute<{ unlocked: boolean }>(sql`select app.unlock_device(${deviceId}::uuid) as unlocked`);
   return rows[0]?.unlocked === true;
+}
+
+/** The till the signed-in person is using (null in the admin app). */
+export async function getMyDevice(tx: RlsTransaction): Promise<{ id: string; name: string } | null> {
+  const rows = await tx.execute<{ id: string; name: string }>(sql`select id, name from app.devices where id = private.ctx_device()`);
+  return rows[0] ?? null;
 }
 
 // ---------- what a device may ask before anyone signs in ----------

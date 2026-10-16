@@ -95,7 +95,7 @@ test("a message appears and can be dismissed", async ({ page }) => {
   const region = page.locator(".ui-toast-region");
   await expect(region).toContainText("Saved");
   await expect(region).toHaveAttribute("aria-live", "polite");
-  await region.getByRole("button", { name: "Dismiss" }).click();
+  await region.getByRole("button", { name: "Close" }).click();
   await expect(region).not.toContainText("Saved");
 });
 

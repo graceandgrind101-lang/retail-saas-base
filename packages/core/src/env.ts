@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { devSignInProblem } from "./dev-sign-in";
 
 /**
  * The one schema for every environment variable (Phase A task A2).
@@ -120,7 +121,10 @@ function toProblems(error: z.ZodError): string[] {
 
 export function parseServerEnv(source: Readonly<Record<string, string | undefined>>): ServerEnv {
   const result = serverEnvSchema.safeParse(source);
-  if (!result.success) throw new EnvError(toProblems(result.error));
+  const problems = result.success ? [] : toProblems(result.error);
+  const danger = devSignInProblem(source);
+  if (danger) problems.push(danger);
+  if (!result.success || problems.length > 0) throw new EnvError(problems);
   return result.data;
 }
 

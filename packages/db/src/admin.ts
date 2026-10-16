@@ -6,6 +6,7 @@
 import type { Sql } from "postgres";
 import { connect, type ConnectionOptions, type Database } from "./internal/connect";
 
+export * from "./dev-seed";
 export * from "./tenants";
 
 export interface AdminDb {

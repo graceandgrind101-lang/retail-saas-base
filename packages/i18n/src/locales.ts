@@ -60,3 +60,15 @@ export function messageAt(messages: Messages, path: string): string | undefined 
 
 /** The path of a permission's label: `sale:below_floor` is `permissions.sale.below_floor`. */
 export const permissionMessagePath = (key: string): string => `permissions.${key.replace(":", ".")}`;
+
+/**
+ * Text a shop wrote in its own languages (a shop name, a branch name): the person's language if the
+ * shop wrote one, else English, else whatever it has, else nothing. Never throws.
+ */
+export function pickText(text: Partial<Record<string, string>> | null | undefined, locale: string): string {
+  if (!text) return "";
+  const own = text[locale];
+  if (own) return own;
+  if (text.en) return text.en;
+  return Object.values(text).find((value): value is string => typeof value === "string" && value !== "") ?? "";
+}

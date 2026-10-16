@@ -140,6 +140,7 @@ describe("route files export only what Next allows", () => {
       "auth/session/route.ts",
       "auth/shops/route.ts",
       "auth/signout/route.ts",
+      "dev/sign-in/route.ts",
       "devices/me/route.ts",
       "devices/pair/route.ts",
       "devices/pairing-codes/route.ts",

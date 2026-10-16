@@ -485,6 +485,18 @@
 .ui-module-heading[data-module="manufacturing"] { --module-color: var(--mod-manufacturing); }
 .ui-module-heading[data-module="transfers"] { --module-color: var(--mod-transfers); }
 
+/* a text link that is still a thumb-sized target */
+.ui-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+.ui-card-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+
 /* ── Layout helpers for pages and the gallery ────────── */
 .ui-grid {
   display: grid;

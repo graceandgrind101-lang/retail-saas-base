@@ -60,7 +60,10 @@
     "approval_invalid": "ይህ ፈቃድ ትክክል አይደለም ወይም ጊዜው አልፎበታል።",
     "cannot_approve": "ይህ ሰው ይህን ተግባር ማጽደቅ አይችልም።",
     "last_owner": "ሱቅ ቢያንስ አንድ ባለቤት ሊኖረው ይገባል።",
-    "shop_read_only": "ይህ ሱቅ ቆሟል። ማየት ብቻ ይችላሉ፤ ምንም መቀየር አይቻልም።"
+    "shop_read_only": "ይህ ሱቅ ቆሟል። ማየት ብቻ ይችላሉ፤ ምንም መቀየር አይቻልም።",
+    "not_found": "ይህ አይገኝም።",
+    "no_demo_shop": "የናሙና ሱቅ እስካሁን የለም። ይህን ያሂዱ፦ pnpm dev:seed",
+    "network": "ግንኙነት የለም። መስመሩን ፈትሸው እንደገና ይሞክሩ።"
   },
   "pin": {
     "title": "ፒንዎን ያስገቡ",
@@ -226,5 +229,100 @@
     "title": "መነሻ",
     "today": "ዛሬ {date} ነው",
     "pick": "ቋንቋዎን እና የቀን መቁጠሪያዎን ይምረጡ"
+  },
+  "shell": {
+    "skipToContent": "ወደ ዋናው ይዘት ዝለል",
+    "navigation": "ዋና ምናሌ",
+    "openMenu": "ምናሌውን ክፈት",
+    "closeMenu": "ምናሌውን ዝጋ",
+    "search": "ፈልግ",
+    "searchPlaceholder": "ገጽ ፈልግ…",
+    "noResults": "ምንም አልተገኘም",
+    "shop": "ሱቅ",
+    "signedInAs": "የገቡት እንደ {name}",
+    "signOut": "ውጣ",
+    "more": "ተጨማሪ",
+    "help": "እገዛ",
+    "alertsBell": "ማንቂያዎች",
+    "alertsBellCount": "{count, plural, one {ማንቂያዎች፣ # ክፍት} other {ማንቂያዎች፣ # ክፍት}}",
+    "impersonating": "የድጋፍ ቡድናችን አባል {shop}ን እየተመለከተ ነው",
+    "notBuilt": "ይህ ገጽ ገና አልተዘጋጀም።",
+    "configuration": "ውቅር",
+    "preferences": "አዘጋገብ",
+    "theme": {
+      "label": "ገጽታ",
+      "system": "እንደ መሣሪያው",
+      "light": "ብሩህ",
+      "dark": "ጨለማ"
+    }
+  },
+  "nav": {
+    "home": "መነሻ",
+    "alerts": "ማንቂያዎች",
+    "sell": "ሽያጭ",
+    "sales": "ሽያጮች",
+    "shifts": "ፈረቃዎች",
+    "products": "ምርቶች",
+    "receive": "መቀበል",
+    "counts": "ቆጠራ",
+    "suppliers": "አቅራቢዎች",
+    "payments": "ክፍያዎች",
+    "customers": "ደንበኞች",
+    "reports": "ሪፖርቶች",
+    "staff": "ሠራተኞች",
+    "devices": "መሣሪያዎች",
+    "settings": "ቅንብሮች"
+  },
+  "pos": {
+    "tabs": {
+      "sell": "ሽያጭ",
+      "today": "ዛሬ",
+      "parked": "የተያዙ",
+      "more": "ተጨማሪ"
+    },
+    "cashier": "ገንዘብ ተቀባይ፦ {name}",
+    "lock": "ቆልፍ",
+    "idleLocked": "ለደህንነት ሲባል ከጥቂት ጊዜ እረፍት በኋላ ተቆልፏል።",
+    "placeholder": "የሽያጭ ማያ ገጽ በሚቀጥለው ምዕራፍ ይመጣል።",
+    "openAdmin": "የአስተዳደር መተግበሪያውን ክፈት"
+  },
+  "signIn": {
+    "title": "ግባ",
+    "pairTitle": "ይህን መሣሪያ አገናኝ",
+    "pairIntro": "ሥራ አስኪያጁ በሚሰጥዎ ኮድ ይህን መሣሪያ ከሱቁ ጋር ያገናኙ።",
+    "code": "ኮድ",
+    "deviceName": "የዚህ መሣሪያ ስም",
+    "deviceNameHint": "ለምሳሌ ሒሳብ ቆጣሪ 1",
+    "kind": "የመሣሪያ ዓይነት",
+    "kinds": {
+      "pos": "የሽያጭ መሣሪያ",
+      "phone": "ስልክ",
+      "tablet": "ታብሌት",
+      "desktop": "ኮምፒውተር"
+    },
+    "pair": "አገናኝ",
+    "whoAreYou": "እርስዎ ማን ነዎት?",
+    "changePerson": "ሌላ ሰው",
+    "locked": "ተቆልፏል",
+    "noStaff": "በዚህ መሣሪያ ላይ እስካሁን መግባት የሚችል ሰው የለም። ሥራ አስኪያጁ ፒን እንዲያዘጋጅልዎ ይጠይቁ።",
+    "devHeading": "የገንቢ መግቢያ",
+    "devOwner": "እንደ ናሙና ባለቤት ግባ",
+    "adminSoon": "በመለያ (ኢሜይል ወይም ጉግል) መግባት የመለያ ማዋቀሪያው ሲጠናቀቅ ይመጣል። እስከዚያ ድረስ የተገናኘ መሣሪያና ፒን ይጠቀሙ።"
+  },
+  "alertsScreen": {
+    "empty": "ክፍት ማንቂያ የለም።",
+    "showClosed": "የተዘጉ ማንቂያዎችን አሳይ",
+    "detail": "የማንቂያ ዝርዝር",
+    "when": "መቼ",
+    "note": "ማስታወሻ",
+    "notePlaceholder": "ማስታወሻ (አማራጭ)",
+    "saved": "ተቀምጧል",
+    "closedBy": "ተዘግቷል"
+  },
+  "homeScreen": {
+    "welcome": "ሰላም፣ {name}",
+    "alertsTitle": "ክፍት ማንቂያዎች",
+    "nothingOpen": "ትኩረት የሚፈልግ ነገር የለም።",
+    "seeAlerts": "ማንቂያዎችን ተመልከት"
   }
 }

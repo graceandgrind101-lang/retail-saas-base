@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ALERT_CATEGORIES, ALERT_RULES, ALERT_STATUSES, MODULE_KEYS, PERMISSION_KEYS, SYSTEM_ROLE_KEYS } from "@retail/core";
+import { ADMIN_NAV, ALERT_CATEGORIES, ALERT_RULES, ALERT_STATUSES, MODULE_KEYS, PERMISSION_KEYS, POS_TABS, SYSTEM_ROLE_KEYS } from "@retail/core";
 import { checkLocales } from "./check";
 import {
   ALL_LOCALES,
@@ -14,6 +14,7 @@ import {
   messageAt,
   offeredLocales,
   permissionMessagePath,
+  pickText,
   resolveCalendar,
   resolveLocale,
 } from "./locales";
@@ -53,6 +54,10 @@ describe("every name the system defines has text in every language", () => {
   it("the thirteen Ethiopian months and the pin problems", () => {
     for (let m = 1; m <= 13; m++) expect(has(`calendar.ethiopian_month.${m}`), String(m)).toEqual([]);
     for (const p of ["not_digits", "too_short", "too_long", "too_easy"]) expect(has(`pin.problem.${p}`), p).toEqual([]);
+  });
+  it("every menu item and POS tab (so a new screen cannot ship without its name)", () => {
+    for (const item of ADMIN_NAV) expect(has(`nav.${item.key}`), item.key).toEqual([]);
+    for (const tab of POS_TABS) expect(has(`pos.tabs.${tab.key}`), tab.key).toEqual([]);
   });
   it("has no text for a key that is not defined (guards the test itself)", () => {
     expect(has("permissions.nope.nope")).toEqual(["am", "en"]);
@@ -126,5 +131,21 @@ describe("looking up a message", () => {
   });
   it("names a permission's text", () => {
     expect(permissionMessagePath("sale:below_floor")).toBe("permissions.sale.below_floor");
+  });
+});
+
+describe("a shop's own text in the person's language", () => {
+  it("takes their language if the shop wrote one, then English, then anything", () => {
+    expect(pickText({ en: "Demo", am: "ናሙና" }, "am")).toBe("ናሙና");
+    expect(pickText({ en: "Demo", am: "ናሙና" }, "en")).toBe("Demo");
+    expect(pickText({ en: "Demo" }, "am")).toBe("Demo");
+    expect(pickText({ om: "Fakkeenya" }, "am")).toBe("Fakkeenya");
+    expect(pickText({ am: "", en: "Demo" }, "am")).toBe("Demo");
+  });
+  it("is empty rather than failing when there is nothing", () => {
+    expect(pickText({}, "en")).toBe("");
+    expect(pickText(null, "en")).toBe("");
+    expect(pickText(undefined, "am")).toBe("");
+    expect(pickText({ en: "", am: "" }, "am")).toBe("");
   });
 });
