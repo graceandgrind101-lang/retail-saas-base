@@ -42,6 +42,14 @@ export class NoShopAccessError extends Error {
   }
 }
 
+/** The PIN approval is unknown, used, expired, for another action or record, or asked for by someone else. SQLSTATE RT007. */
+export class StepUpInvalidError extends Error {
+  constructor() {
+    super("This approval is not valid.");
+    this.name = "StepUpInvalidError";
+  }
+}
+
 export const isSessionEndedError = (error: unknown): boolean => error instanceof SessionEndedError || pgErrorCode(error) === "28000";
 
 /** Turn a raw database error into the matching application error; anything else is returned unchanged. */
@@ -55,6 +63,8 @@ export function translateAuthError(error: unknown): unknown {
       return new AlreadyMemberError();
     case "RT003":
       return new NoShopAccessError();
+    case "RT007":
+      return new StepUpInvalidError();
     default:
       return error;
   }

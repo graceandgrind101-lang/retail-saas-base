@@ -61,6 +61,8 @@ export interface TenantDb {
   rls<T>(ctx: RlsContext, fn: (tx: RlsTransaction) => Promise<T>, options?: RlsOptions): Promise<T>;
   /** For a verified account before it has chosen a shop (see `runWithIdentity`). */
   identity<T>(identity: Identity, fn: (tx: IdentityTransaction) => Promise<T>): Promise<T>;
+  /** For a paired till BEFORE anyone has signed in (pairing, the staff list, PIN sign-in). */
+  device<T>(fn: (tx: DeviceTransaction) => Promise<T>): Promise<T>;
   close(): Promise<void>;
 }
 
@@ -161,12 +163,36 @@ export async function runWithIdentity<T>(
   });
 }
 
+/** The handle for a till that has no account and no shop context yet: only the narrow device functions work. */
+export type DeviceTransaction = RlsTransaction;
+
+/**
+ * Run `fn` for a till that is pairing or signing someone in. Nothing is claimed: no shop, no
+ * account. Only the deliberately narrow functions in migration 0008 (`app.pair_device`,
+ * `app.device_info`, `app.device_staff`, `app.pin_attempt_begin`, `app.pin_sign_in_finish`) do
+ * anything here, and each proves itself with a secret (a pairing code, a device token, a PIN).
+ *
+ * IMPORTANT: a failed guess must be RETURNED, never thrown. Throwing rolls the transaction back,
+ * and the failure counter with it. The helpers in devices.ts follow this rule.
+ */
+export async function runAsDevice<T>(db: Database, fn: (tx: DeviceTransaction) => Promise<T>): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`set local role authenticated`);
+    try {
+      return await fn(tx);
+    } catch (error) {
+      throw translateAuthError(error);
+    }
+  });
+}
+
 /** Connect as the shop-app login (`retail_app`, which cannot bypass row-level security). */
 export function createTenantDb(url: string, options?: ConnectionOptions): TenantDb {
   const { client, db } = connect(url, options);
   return {
     rls: (ctx, fn, options) => runWithRls(db, ctx, fn, options),
     identity: (identity, fn) => runWithIdentity(db, identity, fn),
+    device: (fn) => runAsDevice(db, fn),
     close: () => client.end(),
   };
 }

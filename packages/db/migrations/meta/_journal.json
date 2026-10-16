@@ -50,6 +50,20 @@
       "when": 1792148297488,
       "tag": "0006_sign_in_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792154243608,
+      "tag": "0007_devices_and_pins",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792154305695,
+      "tag": "0008_device_functions",
+      "breakpoints": true
     }
   ]
 }

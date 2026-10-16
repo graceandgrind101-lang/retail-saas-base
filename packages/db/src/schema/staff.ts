@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, foreignKey, index, integer, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { check, foreignKey, integer, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { roles } from "./roles";
 import { appSchema, tenantTable } from "./tenant-table";
 
@@ -61,40 +61,4 @@ export const staff = tenantTable(
   ],
 );
 
-/**
- * A sign-in. Kept in the database (not only in a cookie) so ending it takes effect on the very
- * next request, from any device: suspend the person, or end the session, and the check at the
- * start of every request (`private.assert_session_active`) refuses it.
- */
-export const staffSessions = tenantTable(
-  "staff_sessions",
-  {
-    staffId: uuid("staff_id").notNull(),
-    /** The paired till this sign-in happened on (task A8 adds the foreign key); null for the admin app. */
-    deviceId: uuid("device_id"),
-    method: text("method").notNull(),
-    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-    endedAt: timestamp("ended_at", { withTimezone: true }),
-    endedReason: text("ended_reason"),
-  },
-  (t) => [
-    foreignKey({
-      name: "staff_sessions_staff_fk",
-      columns: [t.tenantId, t.staffId],
-      foreignColumns: [staff.tenantId, staff.id],
-    }),
-    check("staff_sessions_method", sql`${t.method} IN ('pin', 'password', 'google', 'telegram')`),
-    check(
-      "staff_sessions_ended_reason",
-      sql`${t.endedReason} IS NULL OR ${t.endedReason} IN ('logout', 'expired', 'revoked', 'staff_suspended', 'device_revoked')`,
-    ),
-    // A session is either still open (no end, no reason) or closed with a reason, never half of each.
-    check("staff_sessions_ended_consistent", sql`(${t.endedAt} IS NULL) = (${t.endedReason} IS NULL)`),
-    check("staff_sessions_expiry_after_start", sql`${t.expiresAt} > ${t.startedAt}`),
-    index("staff_sessions_open_idx").on(t.tenantId, t.staffId).where(sql`${t.endedAt} IS NULL`),
-  ],
-);
-
 export type Staff = typeof staff.$inferSelect;
-export type StaffSession = typeof staffSessions.$inferSelect;

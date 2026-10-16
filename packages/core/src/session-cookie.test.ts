@@ -28,6 +28,17 @@ describe("signSessionCookie / readSessionCookie", () => {
     expect(await readSessionCookie(cookie, SECRET, NOW)).toEqual(payload);
   });
 
+  it("carries the paired device of a PIN sign-in, and only a UUID there", async () => {
+    const withDevice = { ...payload, deviceId: "018f0000-0000-7000-8000-0000000000d1" };
+    const cookie = await signSessionCookie(withDevice, SECRET);
+    expect(await readSessionCookie(cookie, SECRET, NOW)).toEqual(withDevice);
+    expect(cookie).toBe(craft({ v: 1, t: payload.tenantId, s: payload.staffId, i: payload.sessionId, d: withDevice.deviceId, e: payload.expiresAt }));
+    await expect(signSessionCookie({ ...payload, deviceId: "nope" }, SECRET)).rejects.toThrow(TypeError);
+    for (const d of ["nope", 5, null, "", "018f0000-0000-7000-8000-0000000000d1 "]) {
+      expect(await readSessionCookie(craft({ ...good, d }), SECRET, NOW), String(d)).toBeNull();
+    }
+  });
+
   it("produces exactly what an independent HMAC-SHA256 produces (so it is a standard signature)", async () => {
     expect(await signSessionCookie(payload, SECRET)).toBe(craft(good));
   });

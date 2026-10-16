@@ -30,8 +30,8 @@ const rowCount = async (label: string) => {
 };
 
 describe("the public surface", () => {
-  it("offers only rls(), identity() and close(): there is no way to run an unscoped query", () => {
-    expect(Object.keys(db).sort()).toEqual(["close", "identity", "rls"]);
+  it("offers only rls(), identity(), device() and close(): there is no way to run an unscoped query", () => {
+    expect(Object.keys(db).sort()).toEqual(["close", "device", "identity", "rls"]);
   });
 });
 

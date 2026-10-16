@@ -131,13 +131,21 @@ describe("route files export only what Next allows", () => {
   const apiDir = join(__dirname, "..", "app", "api");
   const files = routeFiles(apiDir);
 
-  it("finds the five sign-in routes", () => {
+  it("finds every API route (add new ones here on purpose)", () => {
     expect(files.map((f) => relative(apiDir, f).replaceAll("\\", "/")).sort()).toEqual([
       "auth/invite/accept/route.ts",
       "auth/me/route.ts",
       "auth/session/route.ts",
       "auth/shops/route.ts",
       "auth/signout/route.ts",
+      "devices/me/route.ts",
+      "devices/pair/route.ts",
+      "devices/pairing-codes/route.ts",
+      "devices/pin-sign-in/route.ts",
+      "devices/revoke/route.ts",
+      "devices/unlock/route.ts",
+      "staff/pin/route.ts",
+      "step-up/route.ts",
     ]);
   });
 

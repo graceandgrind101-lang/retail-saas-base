@@ -93,3 +93,12 @@ The Supabase CLI and the GitHub CLI are not installed (Docker now is). Git pushe
 - postgres.js on `prepare:false` connections cannot serialise objects or `Date`: pass JSON as text with `::text::jsonb` and times as ISO strings with `::timestamptz`.
 - Test database uses a fixed throwaway password; `@retail/db/testing` holds the shared helpers. `core` has no Node types, so its tests use `tsconfig.test.json`.
 - Route files may only export HTTP verbs/config, so logic lives in `lib/auth` and a test checks every route file.
+
+## Findings from building A8 (devices and PINs)
+- A function that counts failed guesses must not raise on failure: the error rolls back the whole transaction, counter included. They return a status and the TypeScript helpers return `{ ok: false }` instead of throwing.
+- PBKDF2 for PINs is capped at 100,000 iterations on Cloudflare Workers, and the PIN is first run through `HMAC(pepper, pin)` so a copy of the database alone cannot be brute-forced (4-6 digits is too few possibilities to protect otherwise).
+- The PIN is checked in the server (slow hash), so the database counts each attempt as a failure first and a correct PIN clears it. This is what makes parallel guessing futile; a test fires 24 at once and only five get through.
+- Audit rows name tables with their schema (`app.devices`). `created_at` is immutable; tests that need an expired code insert one directly.
+- A lock on the till covers everyone on it, as the plan says (staff and device both lock after 5), so an owner/manager needs a way to open it early: `app.unlock_device`.
+- Core has no Node or DOM types, so UTF-8 and base64url helpers live in `encoding.ts` and are reused by the PIN code.
+- Windows: long bash heredocs containing quotes failed repeatedly; scripts are written with the Write tool and run with Python.

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { InvalidTokenError, isUuid, parseCookieHeader, readSessionCookie, signSessionCookie, type VerifiedAccount } from "@retail/core";
+import { InvalidTokenError, isUuid, parseCookieHeader, signSessionCookie, type VerifiedAccount } from "@retail/core";
 import {
   AlreadyMemberError,
   InviteInvalidError,
@@ -15,6 +15,7 @@ import {
   type RlsContext,
   type TenantDb,
 } from "@retail/db";
+import { HttpError, jsonResponse, readJsonBody, readSessionContext, requireSameOrigin as requireOrigin } from "../http";
 import { clearedSessionCookieHeader, sessionCookieHeader, sessionCookieName } from "./cookie";
 import type { TokenVerifier } from "./verify-token";
 
@@ -38,17 +39,6 @@ export interface AuthDeps {
   now?: () => number;
 }
 
-class HttpError extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: string,
-  ) {
-    super(code);
-    this.name = "HttpError";
-  }
-}
-
-const MAX_BODY_BYTES = 4096;
 const BEARER = /^bearer ([A-Za-z0-9._~+/=-]{1,8192})$/i;
 
 const uuid = z.string().refine(isUuid, "must be a UUID");
@@ -57,19 +47,11 @@ const sessionBody = z.object({ tenantId: uuid }).strict();
 
 export function createAuthHandlers(deps: AuthDeps) {
   const now = deps.now ?? Date.now;
-  const origin = new URL(deps.appUrl).origin;
   const clearCookie = { "set-cookie": clearedSessionCookieHeader(deps.appUrl) };
 
-  const json = (status: number, body: unknown, headers: Record<string, string> = {}): Response =>
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...headers },
-    });
+  const json = jsonResponse;
 
-  /** Requests that change anything must come from our own pages: a form on another site cannot send this. */
-  function requireSameOrigin(request: Request): void {
-    if (request.headers.get("origin") !== origin) throw new HttpError(403, "bad_origin");
-  }
+  const requireSameOrigin = (request: Request): void => requireOrigin(request, deps.appUrl);
 
   async function verifiedAccount(request: Request): Promise<VerifiedAccount> {
     const match = BEARER.exec(request.headers.get("authorization") ?? "");
@@ -77,29 +59,10 @@ export function createAuthHandlers(deps: AuthDeps) {
     return deps.verifyToken(match[1]);
   }
 
-  async function readBody<T>(request: Request, schema: z.ZodType<T>): Promise<T> {
-    const declared = Number(request.headers.get("content-length") ?? "0");
-    if (declared > MAX_BODY_BYTES) throw new HttpError(400, "bad_request");
-    const text = await request.text();
-    if (text.length > MAX_BODY_BYTES) throw new HttpError(400, "bad_request");
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      throw new HttpError(400, "bad_request");
-    }
-    const result = schema.safeParse(parsed);
-    if (!result.success) throw new HttpError(400, "bad_request");
-    return result.data;
-  }
+  const readBody = readJsonBody;
 
-  /** The shop sign-in named by the signed cookie, or null. The DATABASE still decides if it is alive. */
-  async function sessionContext(request: Request): Promise<RlsContext | null> {
-    const value = parseCookieHeader(request.headers.get("cookie"))[sessionCookieName(deps.appUrl)];
-    if (!value) return null;
-    const payload = await readSessionCookie(value, deps.sessionSecret, Math.floor(now() / 1000));
-    return payload ? { tenantId: payload.tenantId, staffId: payload.staffId, sessionId: payload.sessionId } : null;
-  }
+  const sessionContext = (request: Request): Promise<RlsContext | null> =>
+    readSessionContext(request, { appUrl: deps.appUrl, sessionSecret: deps.sessionSecret, nowSeconds: Math.floor(now() / 1000) });
 
   function errorResponse(error: unknown): Response {
     if (error instanceof HttpError) return json(error.status, { error: error.code });

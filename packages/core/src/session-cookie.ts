@@ -4,7 +4,7 @@ import { isUuid } from "./uuid";
 /**
  * The signed cookie that carries a shop sign-in (Phase A task A7b).
  *
- * It holds only three ids and an expiry. It proves the browser is presenting a cookie WE issued;
+ * It holds only three ids (four for a PIN sign-in on a paired device) and an expiry. It proves the browser is presenting a cookie WE issued;
  * it does not prove the sign-in is still alive. That is decided by the database on every request
  * (`private.assert_session_active`), so ending a session works at once no matter what a browser
  * still holds. The signature stops forgery and lets junk be dropped before any database call.
@@ -16,6 +16,8 @@ export interface SessionCookiePayload {
   tenantId: string;
   staffId: string;
   sessionId: string;
+  /** The paired till a PIN sign-in happened on; absent for the admin app. */
+  deviceId?: string;
   /** Unix seconds. */
   expiresAt: number;
 }
@@ -40,12 +42,12 @@ async function hmacKey(secret: string, usage: "sign" | "verify"): Promise<unknow
 }
 
 export async function signSessionCookie(payload: SessionCookiePayload, secret: string): Promise<string> {
-  for (const id of [payload.tenantId, payload.staffId, payload.sessionId]) {
+  for (const id of [payload.tenantId, payload.staffId, payload.sessionId, ...(payload.deviceId === undefined ? [] : [payload.deviceId])]) {
     if (!isUuid(id)) throw new TypeError("session cookie ids must be UUIDs");
   }
   if (!Number.isSafeInteger(payload.expiresAt)) throw new TypeError("session cookie expiry must be whole Unix seconds");
 
-  const body = base64url(utf8Bytes(JSON.stringify({ v: 1, t: payload.tenantId, s: payload.staffId, i: payload.sessionId, e: payload.expiresAt })));
+  const body = base64url(utf8Bytes(JSON.stringify({ v: 1, t: payload.tenantId, s: payload.staffId, i: payload.sessionId, ...(payload.deviceId === undefined ? {} : { d: payload.deviceId }), e: payload.expiresAt })));
   const signature = new Uint8Array(await subtle().sign("HMAC", await hmacKey(secret, "sign"), utf8Bytes(body)));
   return `${body}.${base64url(signature)}`;
 }
@@ -82,11 +84,12 @@ export async function readSessionCookie(value: string, secret: string, nowSecond
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
   const claims = parsed as Record<string, unknown>;
   const keys = Object.keys(claims).sort().join(",");
-  if (keys !== "e,i,s,t,v" || claims.v !== 1) return null;
-  const { t, s, i, e } = claims;
+  if ((keys !== "e,i,s,t,v" && keys !== "d,e,i,s,t,v") || claims.v !== 1) return null;
+  const { t, s, i, e, d } = claims;
   if (typeof t !== "string" || typeof s !== "string" || typeof i !== "string" || !isUuid(t) || !isUuid(s) || !isUuid(i)) return null;
+  if (d !== undefined && (typeof d !== "string" || !isUuid(d))) return null;
   if (typeof e !== "number" || !Number.isSafeInteger(e) || e <= nowSeconds) return null;
-  return { tenantId: t, staffId: s, sessionId: i, expiresAt: e };
+  return { tenantId: t, staffId: s, sessionId: i, ...(d === undefined ? {} : { deviceId: d }), expiresAt: e };
 }
 
 /** `a=1; b=2` into `{ a: "1", b: "2" }`. Ignores malformed pairs; the first value of a name wins. */
