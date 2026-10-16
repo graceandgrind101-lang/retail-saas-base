@@ -5,7 +5,7 @@ import postgres, { type Sql } from "postgres";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { InvalidRlsContextError, RLS_SETTINGS, createTenantDb, runWithRls, type RlsContext, type TenantDb } from "../src/rls";
 import * as schema from "../src/schema";
-import { adminSql, appUrl, createTenant, newId } from "./helpers";
+import { adminSql, appUrl, createStaffSession, createTenant, newId } from "./helpers";
 import { createSecuredTable, dropTables } from "./probe-tables";
 
 let admin: Sql;
@@ -30,8 +30,8 @@ const rowCount = async (label: string) => {
 };
 
 describe("the public surface", () => {
-  it("offers only rls() and close(): there is no way to run an unscoped query", () => {
-    expect(Object.keys(db).sort()).toEqual(["close", "rls"]);
+  it("offers only rls(), identity() and close(): there is no way to run an unscoped query", () => {
+    expect(Object.keys(db).sort()).toEqual(["close", "identity", "rls"]);
   });
 });
 
@@ -62,7 +62,14 @@ describe("identity never outlives its transaction", () => {
     const client = postgres(appUrl(), { max: 1, onnotice: () => {} });
     try {
       const drizzleOnSameConnection = drizzle(client, { schema });
-      const everything = Object.fromEntries(Object.keys(RLS_SETTINGS).map((k) => [k, newId()])) as unknown as RlsContext;
+      // the staff and session ids must be real: a claimed session is verified against the database
+      const real = await createStaffSession(admin, tenant);
+      const everything = {
+        ...(Object.fromEntries(Object.keys(RLS_SETTINGS).map((k) => [k, newId()])) as unknown as RlsContext),
+        tenantId: tenant,
+        staffId: real.staffId,
+        sessionId: real.sessionId,
+      };
       await runWithRls(drizzleOnSameConnection, everything, async () => undefined);
 
       const left = await client.begin(async (tx) => {
@@ -83,8 +90,9 @@ describe("identity never outlives its transaction", () => {
     const client = postgres(appUrl(), { max: 1, onnotice: () => {} });
     try {
       const drizzleOnSameConnection = drizzle(client, { schema });
+      const real = await createStaffSession(admin, tenant);
       await expect(
-        runWithRls(drizzleOnSameConnection, { tenantId: tenant, staffId: newId() }, async () => {
+        runWithRls(drizzleOnSameConnection, { tenantId: tenant, staffId: real.staffId, sessionId: real.sessionId }, async () => {
           throw new Error("request failed");
         }),
       ).rejects.toThrow("request failed");

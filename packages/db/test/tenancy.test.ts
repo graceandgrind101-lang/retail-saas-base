@@ -329,9 +329,10 @@ describe("provisionTenant", () => {
 
     const log = await admin<{ seq: number; event_key: string; actor_kind: string; after_data: Record<string, unknown> }[]>`
       select seq::int as seq, event_key, actor_kind, after_data from audit.log where tenant_id = ${result.tenantId} order by seq`;
-    expect(log.map((e) => e.event_key)).toEqual(["row.insert", "tenant.created"]);
-    expect(log[0]?.actor_kind).toBe("system");
-    expect(log[1]?.after_data).toMatchObject({ slug, industry: "electronics", plan: "pro" });
+    // the default branch and the five system roles, then the creation event
+    expect(log.map((e) => e.event_key)).toEqual([...Array(6).fill("row.insert"), "tenant.created"]);
+    expect(log.every((e) => e.actor_kind === "system")).toBe(true);
+    expect(log.at(-1)?.after_data).toMatchObject({ slug, industry: "electronics", plan: "pro", ownerInvited: false });
     const [chain] = await admin<{ ok: boolean }[]>`select ok from audit.verify_chain(${result.tenantId})`;
     expect(chain?.ok).toBe(true);
   });

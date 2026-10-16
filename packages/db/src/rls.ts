@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { isUuid } from "@retail/core";
 import { connect, type ConnectionOptions, type Database } from "./internal/connect";
+import { translateAuthError } from "./errors";
 
 /**
  * Who a request is acting as. The server builds this from a verified session; nothing the
@@ -37,6 +38,9 @@ export class InvalidRlsContextError extends Error {
 /** The handle passed to your query code. It is already scoped to one tenant. */
 export type RlsTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
+/** The handle for a verified account with no shop chosen yet: no shop data is visible through it. */
+export type IdentityTransaction = RlsTransaction;
+
 export interface RlsOptions {
   /**
    * Pass `true` for a transaction that will change data. It takes the tenant's audit lock
@@ -55,6 +59,8 @@ export interface TenantDb {
    * This is the ONLY way tenant code reaches the database.
    */
   rls<T>(ctx: RlsContext, fn: (tx: RlsTransaction) => Promise<T>, options?: RlsOptions): Promise<T>;
+  /** For a verified account before it has chosen a shop (see `runWithIdentity`). */
+  identity<T>(identity: Identity, fn: (tx: IdentityTransaction) => Promise<T>): Promise<T>;
   close(): Promise<void>;
 }
 
@@ -64,6 +70,29 @@ function assertValidContext(ctx: RlsContext): void {
     const value = ctx[field];
     if (value !== undefined && !isUuid(value)) throw new InvalidRlsContextError(field);
   }
+  // A staff identity is only believable together with the sign-in that proves it. Without a
+  // session id the request could never be revoked, so it is not accepted at all.
+  if (ctx.staffId !== undefined && ctx.sessionId === undefined) {
+    throw new InvalidRlsContextError("sessionId (required whenever staffId is given)");
+  }
+}
+
+/** A verified login account, before any shop is chosen. The server fills this from a checked token. */
+export interface Identity {
+  authUserId: string;
+  /** The account's verified email address; invitations are matched against it. */
+  email: string;
+}
+
+/** Postgres settings read by `private.ctx_auth_user()` / `ctx_auth_email()` (migration 0006). Keep in sync. */
+export const IDENTITY_SETTINGS = { authUserId: "app.auth_user_id", authEmail: "app.auth_email" } as const;
+
+/** Enough to stop junk and control characters; the real proof of ownership is the verified token. */
+const EMAIL_SHAPE = /^[^\s@\u0000-\u001f]+@[^\s@\u0000-\u001f]+\.[^\s@\u0000-\u001f]+$/;
+
+export function assertValidIdentity(identity: Identity): void {
+  if (!isUuid(identity.authUserId)) throw new InvalidRlsContextError("authUserId");
+  if (identity.email.length > 254 || !EMAIL_SHAPE.test(identity.email)) throw new InvalidRlsContextError("email");
 }
 
 /**
@@ -90,11 +119,45 @@ export async function runWithRls<T>(
         set_config(${RLS_SETTINGS.impersonatorId}, ${ctx.impersonatorId ?? ""}, true),
         set_config(${RLS_SETTINGS.pinVerificationId}, ${ctx.pinVerificationId ?? ""}, true)
     `);
+    // The session must still be good, checked inside THIS transaction so there is no gap between
+    // "checked" and "used": ended, expired, a suspended person or a closed shop all stop here.
+    // (Platform and system code claims no session and is not checked.)
+    if (ctx.sessionId !== undefined) {
+      try {
+        await tx.execute(sql`select private.assert_session_active()`);
+      } catch (error) {
+        throw translateAuthError(error);
+      }
+    }
     if (options.write) await tx.execute(sql`select audit.lock_tenant()`);
-    // TODO(A8): before running `fn`, verify the session is active and the staff member is
-    // `active` in this tenant, so a suspended cashier is locked out on their next request
-    // (DATA_MODEL §2 step 3). Needs the staff and session tables from A7/A8.
     return fn(tx);
+  });
+}
+
+/**
+ * Run `fn` as a verified ACCOUNT that has not chosen a shop yet: to list its shops, accept an
+ * invitation or start a session. No shop is in scope, so tables show nothing; only the
+ * deliberately narrow functions in migration 0006 (`app.my_shops`, `app.accept_invite`,
+ * `app.start_session`) do anything useful here.
+ */
+export async function runWithIdentity<T>(
+  db: Database,
+  identity: Identity,
+  fn: (tx: IdentityTransaction) => Promise<T>,
+): Promise<T> {
+  assertValidIdentity(identity);
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`set local role authenticated`);
+    await tx.execute(sql`
+      select
+        set_config(${IDENTITY_SETTINGS.authUserId}, ${identity.authUserId}, true),
+        set_config(${IDENTITY_SETTINGS.authEmail}, ${identity.email}, true)
+    `);
+    try {
+      return await fn(tx);
+    } catch (error) {
+      throw translateAuthError(error);
+    }
   });
 }
 
@@ -103,6 +166,7 @@ export function createTenantDb(url: string, options?: ConnectionOptions): Tenant
   const { client, db } = connect(url, options);
   return {
     rls: (ctx, fn, options) => runWithRls(db, ctx, fn, options),
+    identity: (identity, fn) => runWithIdentity(db, identity, fn),
     close: () => client.end(),
   };
 }

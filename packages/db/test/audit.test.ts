@@ -4,7 +4,7 @@ import type { Sql } from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { InvalidAuditEventError, isValidAuditEventKey, recordAuditEvent, verifyOwnAuditChain } from "../src/audit";
 import { createTenantDb, type RlsContext, type RlsTransaction, type TenantDb } from "../src/rls";
-import { PG, adminSql, appSql, appUrl, createTenant, expectPgError, newId, pgCode } from "./helpers";
+import { PG, adminSql, appSql, appUrl, createStaffSession, createTenant, expectPgError, newId, pgCode } from "./helpers";
 import { createSecuredTable, dropTables } from "./probe-tables";
 
 /**
@@ -61,12 +61,10 @@ const entriesOf = (tenant: string) =>
 
 const newTenant = (prefix: string) => createTenant(admin, `${prefix}-${randomBytes(4).toString("hex")}`);
 
-const staffCtx = (tenantId: string): RlsContext => ({
-  tenantId,
-  staffId: newId(),
-  sessionId: newId(),
-  deviceId: newId(),
-});
+const staffCtx = async (tenantId: string): Promise<RlsContext> => {
+  const { staffId, sessionId } = await createStaffSession(admin, tenantId);
+  return { tenantId, staffId, sessionId, deviceId: newId() };
+};
 
 type Row = { label?: string; secret?: string; noise?: number; price?: number };
 
@@ -115,13 +113,15 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 describe("every row change is recorded automatically", () => {
   it("insert: whole row in after_data, nothing in before_data, who/where recorded", async () => {
     const tenant = await newTenant("rec-ins");
-    const ctx = staffCtx(tenant);
+    const ctx = await staffCtx(tenant); // creating a real staff member and session is itself audited
+    const baseline = (await entriesOf(tenant)).length;
     const rowId = await insertRow(tenant, { label: "iPhone 15", price: 200_000 }, ctx);
 
-    const [entry, ...rest] = await entriesOf(tenant);
-    expect(rest).toEqual([]);
+    const entries = await entriesOf(tenant);
+    expect(entries).toHaveLength(baseline + 1);
+    const entry = entries.at(-1);
     expect(entry).toMatchObject({
-      seq: 1,
+      seq: baseline + 1,
       event_key: "row.insert",
       actor_kind: "staff",
       actor_id: ctx.staffId,
@@ -214,10 +214,10 @@ describe("every row change is recorded automatically", () => {
 
   it("settles the iPhone dispute: price 200,000 became 20,000, by whom, approved with which PIN", async () => {
     const tenant = await newTenant("rec-dispute");
-    const seller = staffCtx(tenant);
+    const seller = await staffCtx(tenant);
     const id = await insertRow(tenant, { label: "iPhone 15", price: 200_000 }, seller);
 
-    const approver = { ...staffCtx(tenant), pinVerificationId: newId() };
+    const approver = { ...(await staffCtx(tenant)), pinVerificationId: newId() };
     await db.rls(approver, (tx) => run(tx, sql`update app.audit_probe set price = 20000 where id = ${id}`), { write: true });
 
     // The shop owner reads the history of that one row, through the same wrapper the app uses.
@@ -388,9 +388,11 @@ describe("a shop's own session", () => {
 
   it("can record its own events, always into its own chain", async () => {
     const tenant = await newTenant("acc-event");
-    const seq = await db.rls({ tenantId: tenant, staffId: newId() }, (tx) => recordAuditEvent(tx, "auth.pin_failed", { attempts: 3 }));
-    expect(seq).toBe(1);
-    const [entry] = await entriesOf(tenant);
+    const ctx = await staffCtx(tenant);
+    const baseline = (await entriesOf(tenant)).length;
+    const seq = await db.rls(ctx, (tx) => recordAuditEvent(tx, "auth.pin_failed", { attempts: 3 }));
+    expect(seq).toBe(baseline + 1);
+    const entry = (await entriesOf(tenant)).at(-1);
     expect(entry).toMatchObject({ event_key: "auth.pin_failed", table_name: null, row_id: null, before_data: null, after_data: { attempts: 3 } });
   });
 
@@ -641,15 +643,17 @@ describe("under load", () => {
     ["with the lock taken at the first audited write", false],
   ])("eight writers on one shop at once keep one gapless chain %s", async (_label, write) => {
     const tenant = await newTenant(write ? "conc-w" : "conc-l");
+    const staff = await staffCtx(tenant);
+    const baseline = (await entriesOf(tenant)).length;
     const workers = Array.from({ length: 8 }, async (_, w) => {
       for (let i = 0; i < 30; i++) {
-        await db.rls({ tenantId: tenant, staffId: newId() }, (tx) =>
+        await db.rls(staff, (tx) =>
           run(tx, sql`insert into app.audit_probe (id, tenant_id, label) values (${newId()}, ${tenant}, ${`w${w}-${i}`})`), { write });
       }
     });
     await Promise.all(workers);
-    expect(await chainOf(tenant)).toMatchObject({ ok: true, checked: 240 });
-    expect(Number((await entriesOf(tenant)).at(-1)?.seq)).toBe(240);
+    expect(await chainOf(tenant)).toMatchObject({ ok: true, checked: baseline + 240 });
+    expect(Number((await entriesOf(tenant)).at(-1)?.seq)).toBe(baseline + 240);
   }, 60_000);
 });
 

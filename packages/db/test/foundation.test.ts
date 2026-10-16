@@ -5,7 +5,7 @@ import { inject } from "vitest";
 import { checkDatabaseSecurity, formatViolations } from "../src/ci/security-check";
 import { runMigrations } from "../src/migrate";
 import { RLS_SETTINGS, createTenantDb } from "../src/rls";
-import { PG, adminSql, appSql, appUrl, expectPgError, newId } from "./helpers";
+import { PG, adminSql, appSql, appUrl, createStaffSession, createTenant, expectPgError, newId } from "./helpers";
 
 let admin: Sql;
 let app: Sql;
@@ -141,7 +141,14 @@ describe("request context functions", () => {
   });
 
   it("each ctx_* function reads its own setting", async () => {
-    const ids = Object.fromEntries(Object.keys(RLS_SETTINGS).map((k) => [k, newId()])) as Record<keyof typeof RLS_SETTINGS, string>;
+    const tenant = await createTenant(admin, `ctx-${newId().slice(-10)}`);
+    const real = await createStaffSession(admin, tenant);
+    const ids = {
+      ...(Object.fromEntries(Object.keys(RLS_SETTINGS).map((k) => [k, newId()])) as Record<keyof typeof RLS_SETTINGS, string>),
+      tenantId: tenant,
+      staffId: real.staffId,
+      sessionId: real.sessionId,
+    };
     const fns: Record<keyof typeof RLS_SETTINGS, string> = {
       tenantId: "private.ctx_tenant",
       staffId: "private.ctx_staff",

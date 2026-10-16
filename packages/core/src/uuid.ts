@@ -24,7 +24,8 @@ const MAX_TIMESTAMP = 0xffff_ffff_ffff; // 48 bits
 const MAX_COUNTER = 0xfff; // 12 bits
 const COUNTER_START_MASK = 0x7ff; // start below the top so there is headroom to count up
 
-function secureRandom(bytes: Uint8Array): Uint8Array {
+/** Fill `bytes` from the platform's secure random source, or throw: never `Math.random`. */
+export function secureRandom(bytes: Uint8Array): Uint8Array {
   const source = (globalThis as { crypto?: { getRandomValues?: (array: Uint8Array) => Uint8Array } }).crypto;
   if (!source?.getRandomValues) {
     throw new Error("No secure random source (crypto.getRandomValues) available to generate ids");

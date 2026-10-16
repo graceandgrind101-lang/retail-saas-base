@@ -1,9 +1,16 @@
+import { randomBytes } from "node:crypto";
 import postgres, { type Sql } from "postgres";
 import { inject } from "vitest";
 import { expect } from "vitest";
 import { uuidv7 } from "@retail/core";
 
 export const newId = (): string => uuidv7();
+
+/** Random lowercase letters only: role keys and module keys may not contain digits. */
+export function randomLetters(length = 12): string {
+  const bytes = randomBytes(length);
+  return Array.from(bytes, (b) => String.fromCharCode(97 + (b % 26))).join("");
+}
 
 /** Owner connection: bypasses row-level security. For setup and for checking the truth. */
 export function adminSql(max = 2): Sql {
@@ -26,6 +33,26 @@ export async function createTenant(admin: Sql, slug: string): Promise<string> {
     insert into platform.tenants (id, slug, display_name, industry, plan_key)
     values (${id}, ${slug}, ${admin.json({ en: slug })}, 'electronics', 'pro')`;
   return id;
+}
+
+/**
+ * A real, active staff member with a live session, for tests that need an identity. Requests that
+ * claim a staff id are checked against the database (`private.assert_session_active`), so made-up
+ * ids are refused. Uses a throwaway role of its own.
+ */
+export async function createStaffSession(
+  admin: Sql,
+  tenantId: string,
+  options: { hours?: number } = {},
+): Promise<{ roleId: string; staffId: string; sessionId: string }> {
+  const roleId = newId();
+  const staffId = newId();
+  const sessionId = newId();
+  await admin`insert into app.roles (id, tenant_id, key, name) values (${roleId}, ${tenantId}, ${randomLetters()}, ${admin.json({ en: "Test role" })})`;
+  await admin`insert into app.staff (id, tenant_id, display_name, role_id, status) values (${staffId}, ${tenantId}, 'Test staff', ${roleId}, 'active')`;
+  await admin`insert into app.staff_sessions (id, tenant_id, staff_id, method, expires_at)
+              values (${sessionId}, ${tenantId}, ${staffId}, 'password', now() + ${options.hours ?? 24} * interval '1 hour')`;
+  return { roleId, staffId, sessionId };
 }
 
 /** The SQLSTATE of a Postgres error, whether raw or wrapped by Drizzle. */

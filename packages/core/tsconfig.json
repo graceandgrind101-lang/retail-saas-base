@@ -1,4 +1,7 @@
 {
   "extends": "@retail/config/tsconfig/base.json",
-  "include": ["src", "*.config.*"]
+  // Production code only, with NO Node or DOM types: core must stay pure (it runs in the
+  // browser, on the server, in the bot and in Workers). Tests are checked by tsconfig.test.json.
+  "include": ["src", "*.config.*"],
+  "exclude": ["src/**/*.test.ts", "src/testing.ts"]
 }

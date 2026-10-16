@@ -3,6 +3,8 @@
 //   --status pilot|trial|active   (default pilot)
 //   --legal-name, --tin           optional
 //   --modules pos,inventory,...   (default: the starter set for the industry)
+//   --owner-email, --owner-name   invite the owner (both required together). The invitation
+//                                 token is printed ONCE: copy it now, it is not stored.
 //   DATABASE_ADMIN_URL            owner connection (required, from the environment)
 import { parseArgs } from "node:util";
 import postgres from "postgres";
@@ -20,6 +22,8 @@ const { values } = parseArgs({
     "legal-name": { type: "string" },
     tin: { type: "string" },
     modules: { type: "string" },
+    "owner-email": { type: "string" },
+    "owner-name": { type: "string" },
   },
   strict: true,
 });
@@ -48,6 +52,10 @@ if (values.modules !== undefined) {
   modules = requested as ModuleKey[];
 }
 
+if ((values["owner-email"] === undefined) !== (values["owner-name"] === undefined)) {
+  fail("--owner-email and --owner-name must be given together");
+}
+
 const displayName: LocalizedText = { en: values.name };
 if (values["name-am"]) displayName.am = values["name-am"];
 
@@ -62,11 +70,19 @@ try {
     ...(values["legal-name"] !== undefined ? { legalName: values["legal-name"] } : {}),
     ...(values.tin !== undefined ? { tin: values.tin } : {}),
     ...(modules ? { modules } : {}),
+    ...(values["owner-email"] !== undefined && values["owner-name"] !== undefined
+      ? { owner: { email: values["owner-email"], displayName: values["owner-name"] } }
+      : {}),
   });
   console.log(`created shop "${result.slug}"`);
   console.log(`  tenant id: ${result.tenantId}`);
   console.log(`  default branch: ${result.branchId}`);
   console.log(`  modules: ${result.modules.join(", ")}`);
+  if (result.ownerInvite) {
+    console.log(`  owner invitation (valid until ${result.ownerInvite.expiresAt.toISOString().slice(0, 10)}):`);
+    console.log(`    path:  /invite/${result.ownerInvite.token}`);
+    console.log("    The token is shown only now and is not stored. Send it to the owner; if it is lost, create a new invitation.");
+  }
 } catch (error) {
   if (error instanceof TenantProvisioningError) fail(error.message);
   throw error;

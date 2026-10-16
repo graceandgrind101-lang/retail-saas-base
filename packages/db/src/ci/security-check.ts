@@ -20,6 +20,14 @@ const EXPECTED_POLICY_EXPRESSIONS = new Set([
   "(tenant_id = (select private.ctx_tenant() as ctx_tenant))",
 ]);
 
+/** A column named like this holds a secret, so the audit log may only ever say "[redacted]". */
+const SECRET_COLUMN_NAME = /(hash|token|secret|password)/i;
+
+/** Personal details that must be redacted even though the name does not say "secret". */
+const REQUIRED_REDACTIONS: Record<string, string[]> = {
+  staff: ["pin_hash", "invite_token_hash", "phone", "invite_email"],
+};
+
 interface TableRow {
   name: string;
   rls: boolean;
@@ -124,6 +132,37 @@ export async function checkDatabaseSecurity(sql: Sql): Promise<Violation[]> {
     }
     for (const extra of own.filter((p) => p.name !== "tenant_isolation")) {
       add(scope, `unexpected policy ${extra.name}: another permissive policy could widen access`);
+    }
+  }
+
+  // ── Secrets and personal details must never be written into the audit log ─
+  // The log is append-only, so a secret that lands in it stays there forever. Any column that
+  // looks like a secret must be redacted by the table's audit trigger, and the known personal
+  // columns must be too (they could never be erased, PLAN.md §8). Re-running
+  // secure_tenant_table() with its defaults (as a careless backfill migration might) would drop
+  // these settings silently, which is exactly what this catches.
+  const columns = await sql<{ table_name: string; column_name: string }[]>`
+    select c.relname as table_name, a.attname as column_name
+    from pg_attribute a
+    join pg_class c on c.oid = a.attrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'app' and c.relkind in ('r', 'p') and a.attnum > 0 and not a.attisdropped`;
+  const triggerDefinitions = await sql<{ table_name: string; definition: string }[]>`
+    select c.relname as table_name, pg_get_triggerdef(g.oid) as definition
+    from pg_trigger g
+    join pg_class c on c.oid = g.tgrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'app' and g.tgname = 'audit_row'`;
+  for (const table of tables) {
+    const definition = triggerDefinitions.find((t) => t.table_name === table.name)?.definition ?? "";
+    const redacted = new Set([...definition.matchAll(/'redact:([a-z0-9_]+)'/g)].map((m) => m[1] ?? ""));
+    const names = columns.filter((c) => c.table_name === table.name).map((c) => c.column_name);
+    const mustRedact = new Set([
+      ...names.filter((name) => SECRET_COLUMN_NAME.test(name)),
+      ...(REQUIRED_REDACTIONS[table.name] ?? []),
+    ]);
+    for (const column of [...mustRedact].sort()) {
+      if (!redacted.has(column)) add(`app.${table.name}`, `column ${column} is not redacted in the audit log`);
     }
   }
 

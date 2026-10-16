@@ -357,6 +357,42 @@ describe("the check catches a weakened audit log (each change restored afterward
     expect(has(problems, "lost access")).toBe(true);
   });
 
+  it.each(["api_token", "secret_note", "password_hint", "pin_hash", "key_hash"])(
+    "a secret-looking column (%s) that the audit log does not redact",
+    async (column) => {
+      try {
+        await createSecuredTable(admin, "chk_secret_col", `${column} text`);
+        expect(has(await problemsFor("app.chk_secret_col"), `column ${column} is not redacted`)).toBe(true);
+      } finally {
+        await dropTables(admin, "chk_secret_col");
+      }
+    },
+  );
+
+  it("the same column is fine once it is redacted", async () => {
+    try {
+      await createSecuredTable(admin, "chk_secret_ok", "api_token text", { redact: ["api_token"] });
+      expect(await problemsFor("app.chk_secret_ok")).toEqual([]);
+    } finally {
+      await dropTables(admin, "chk_secret_ok");
+    }
+  });
+
+  it("the staff table losing its redactions (a careless re-run of secure_tenant_table with defaults)", async () => {
+    try {
+      await admin.unsafe("select private.secure_tenant_table('app.staff', array['pin_failed_count']::text[], array[]::text[])");
+      const problems = await problemsFor("app.staff");
+      for (const column of ["pin_hash", "invite_token_hash", "phone", "invite_email"]) {
+        expect(has(problems, `column ${column} is not redacted`), column).toBe(true);
+      }
+    } finally {
+      await admin.unsafe(
+        "select private.secure_tenant_table('app.staff', array['pin_failed_count']::text[], array['pin_hash', 'invite_token_hash', 'phone', 'invite_email']::text[])",
+      );
+    }
+    expect(await problemsFor("app.staff")).toEqual([]);
+  });
+
   it("a SECURITY DEFINER function with no fixed search_path", async () => {
     try {
       await admin.unsafe("create function private.zz_unsafe() returns int language sql security definer as 'select 1'");

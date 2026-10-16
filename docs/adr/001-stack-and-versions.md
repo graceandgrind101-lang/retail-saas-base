@@ -68,6 +68,15 @@
 - **Custom migrations after generated ones:** `drizzle-kit generate` (tables) then `generate --custom` (functions, triggers, securing) keeps the order explicit: 0003 creates `app.branches`, 0004 secures it by re-running `secure_tenant_table()` over every existing tenant table. Every new version of that function must end the same way.
 - **CLI tests on Windows:** `spawnSync` with `shell: true` does not quote arguments, so test arguments must not contain spaces.
 
+## Findings from building A7a (sign-in)
+
+- **Being `SECURITY DEFINER` does not exempt a function from a trigger.** The read-only trigger looks at the request's shop setting, so a definer function that updates a paused shop's table is still refused. `app.end_my_session` therefore clears the shop setting for its single UPDATE and restores it afterwards; a test checks the request is still inside its shop afterwards.
+- **A made-up identity in a test must now be a real one.** Because every request that claims a staff id is checked against the database, the existing tests that used random ids failed, which is the secure default working. Tests use `createStaffSession()`; note that creating one is itself audited (three entries), so entry-count assertions are relative to a baseline.
+- **`core` has two TypeScript projects.** `tsconfig.json` checks production code with NO Node or DOM types (core must stay pure); `tsconfig.test.json` adds Node for tests that cross-check with `node:crypto`. `pnpm typecheck` runs both.
+- **Postgres custom error codes** (`RT001`-`RT003`, class "RT") carry application meanings (invitation invalid, already a member, no access) from the database to typed errors in `@retail/db`, alongside the standard `28000` ("sign in again") and `25006` ("shop is read-only").
+- **Invitation tokens need no pepper or slow hash.** 256 random bits cannot be guessed, so plain SHA-256 is enough; the point of hashing is only that reading the database never yields a usable link.
+- **The database owner needs `BYPASSRLS`** for the cross-shop definer functions (`my_shops`, `accept_invite`) to see rows (true for Supabase's `postgres`). On plain Postgres (D13) that attribute must be granted explicitly; recorded here so the later move to Ethiopian hosting does not trip on it.
+
 ## Local development database
 
 - **Image:** `supabase/postgres:17.11.0.003` (pinned; 17.11.0.004 existed but was two days old). Same Postgres build as Supabase cloud, so roles (`anon`, `authenticated`, `service_role`) and pgTAP behave as in production. Started with `pnpm db:up` from `infra/dev-db/compose.yaml`, bound to `127.0.0.1:54322` only.

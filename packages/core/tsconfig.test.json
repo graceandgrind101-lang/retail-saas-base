@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  // Tests may use Node (node:crypto, Buffer) to cross-check results independently.
+  "compilerOptions": { "types": ["node"] },
+  "include": ["src", "*.config.*"],
+  "exclude": []
+}

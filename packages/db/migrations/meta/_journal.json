@@ -36,6 +36,20 @@
       "when": 1792145188903,
       "tag": "0004_tenancy_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792148272241,
+      "tag": "0005_staff_roles_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792148297488,
+      "tag": "0006_sign_in_functions",
+      "breakpoints": true
     }
   ]
 }

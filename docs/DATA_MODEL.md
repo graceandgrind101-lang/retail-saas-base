@@ -66,6 +66,16 @@ The Supabase Data API exposes **none** of these (M3).
 3. Checks that the session is still active and the staff member is `active` in that tenant. If not, it aborts. Suspending a cashier therefore locks them out on their next request, as in Neil Lewz.
 4. Runs the caller's queries.
 
+**As built (A7a).** Step 3 is `private.assert_session_active()`, run inside the same transaction as the request, so there is no gap between "checked" and "used". It refuses (SQLSTATE `28000`, `SessionEndedError`) a session that was ended, has expired, belongs to another shop or person, whose staff member is not `active`, or whose shop is `closed`. A `paused` shop still passes (it may read). A request that claims no session (platform and system code) is not checked, and a request that claims a staff id **without** a session id is rejected outright, because it could never be revoked.
+
+**Before a shop is chosen: `db.identity()`.** A person who just signed in with an account has no shop context yet. `db.identity({ authUserId, email }, tx => …)` sets `app.auth_user_id` and `app.auth_email` (from the verified token, never from the browser) and nothing else, so tables show no data; only four deliberately narrow `SECURITY DEFINER` functions do anything: `app.my_shops()` (the shop picker), `app.accept_invite(token_hash)`, `app.start_session(...)` and, inside a shop, `app.end_my_session()`.
+
+**Invitations.** `provisionTenant({ owner })` (or `pnpm tenant:create --owner-email --owner-name`) creates the owner as an `invited` staff row holding only the SHA-256 of a 256-bit random token (the token itself is printed once and never stored; valid 14 days). The person signs in with any account whose **verified** email matches the invited address, follows the link, and `accept_invite` links the account and activates them under a row lock. Every way an invitation can be wrong (unknown, used, expired, wrong email, shop paused or closed) gives the same `InviteInvalidError`, so it cannot be used to probe which tokens exist. Joining a shop you already belong to is the one distinct answer (`AlreadyMemberError`) and rolls back, leaving the invitation pending.
+
+**Ending sessions.** Suspending or archiving a staff member ends their open sessions (trigger `end_sessions_on_inactive`, reason `staff_suspended`), and the per-request check refuses them even before that. Reinstating someone does not revive ended sessions; they sign in again. Signing out ends only that session, and works for a paused shop's people too (`end_my_session` steps out of the read-only rule for its single update).
+
+**Personal data in the audit log.** The log can never be edited, so anything personal written into it could never be erased (PLAN.md §8). `app.staff` therefore records `pin_hash`, `invite_token_hash`, `phone` and `invite_email` as `"[redacted]"`; entries name the person by id, and the current name and phone live in `app.staff` where they can be changed or erased. The security check fails the build if any column named like a secret (`hash`, `token`, `secret`, `password`) is not redacted, or if those four staff columns lose their redaction (a careless re-run of `secure_tenant_table` with defaults would do exactly that).
+
 ---
 
 ## 3. Tables
@@ -99,7 +109,7 @@ The Supabase Data API exposes **none** of these (M3).
 
 **`app.branches`**: `id` · `tenant_id` · `name jsonb` · `address text` · `phone text` · `is_default bool` · `archived_at`. Every tenant gets one default branch at creation. As built: the name must be a non-empty JSON object (one language is enough); a partial unique index allows at most one default branch per shop; and a check forbids archiving the default branch, so a shop always has somewhere to sell.
 
-**Creating a shop** (`pnpm tenant:create`, `provisionTenant()` in `@retail/db/admin`): one transaction that writes the shop, its modules (the starter set for its industry unless a list is given), its default branch and a `tenant.created` audit event, so a shop exists completely or not at all. Staff, system roles and the owner's invitation are added to it in A7 and A9, when those tables exist.
+**Creating a shop** (`pnpm tenant:create`, `provisionTenant()` in `@retail/db/admin`): one transaction that writes the shop, its modules (the starter set for its industry unless a list is given), its default branch and a `tenant.created` audit event, so a shop exists completely or not at all. Since A7a it also creates the five system roles and, with `--owner-email`, the owner's invitation (see §2). What each role may *do* is added in A9.
 
 **`app.staff`**
 | Column | Type | Notes |
@@ -112,14 +122,15 @@ The Supabase Data API exposes **none** of these (M3).
 | `branch_ids` | uuid[] null | Null = all branches |
 | `pin_hash` | text null | M9. Null = no PIN set yet |
 | `pin_set_at`, `pin_failed_count`, `pin_locked_until` | | |
-| `status` | enum(invited, active, suspended, archived) | |
+| `status` | enum(invited, active, suspended, archived) | As built: an `invited` person has a complete invitation and no account yet; nobody else holds an invitation token (database checks) |
+| `invite_email`, `invite_token_hash`, `invite_expires_at` | text, text, timestamptz | **Added in A7a.** The invitation to sign in with an account. Email is lowercase; only the token's SHA-256 is stored; the hash is unique across ALL shops because it is looked up without knowing the shop. Cleared when accepted |
 | `preferred_calendar` | enum(gregorian, ethiopian) null | Null = follow the shop's setting (Gregorian unless changed, D23) |
 | `preferred_language` | text null | Null = follow the shop's default language (English unless changed, D22). Must be a locale that has a message file |
 | `theme` | enum(system, light, dark) | |
 
 **`app.roles`**: `id` · `tenant_id` · `key text` · `name jsonb` · `is_system bool` · `template_key text null` · `archived_at` · `unique (tenant_id, key)`. Each new tenant gets copies of the system templates: Owner, Manager, Cashier, Stock clerk, Viewer. While "Staff & roles" is locked (D7), only the console can change system roles.
 
-**`app.role_permissions`**: `tenant_id` · `role_id` · `permission_key text` · PK `(role_id, permission_key)`
+**`app.role_permissions`**: `id` · `tenant_id` · `role_id` · `permission_key text` · `unique (tenant_id, role_id, permission_key)`; keys look like `resource:action`; a composite key means a role's permissions can only point at a role of the SAME shop. Filled and enforced by the resolver in A9.
 
 **`app.staff_permission_overrides`**: `tenant_id` · `staff_id` · `permission_key` · `effect enum(allow, deny)` · `reason text not null` · `granted_by` · `created_at`
 
@@ -127,7 +138,7 @@ The Supabase Data API exposes **none** of these (M3).
 
 **`app.device_pairing_codes`**: `id` · `tenant_id` · `branch_id` · `code_hash` · `created_by` · `expires_at` (10 min) · `used_at` · `used_by_device_id`. The code is single-use.
 
-**`app.staff_sessions`**: `id` · `tenant_id` · `staff_id` · `device_id null` · `method enum(pin, password, google, telegram)` · `started_at` · `expires_at` (POS 12h, as in Neil Lewz) · `ended_at` · `ended_reason enum(logout, expired, revoked, staff_suspended, device_revoked)`. Sessions live in the database so revoking them takes effect immediately.
+**`app.staff_sessions`**: `id` · `tenant_id` · `staff_id` · `device_id null` · `method enum(pin, password, google, telegram)` · `started_at` · `expires_at` (POS 12h, as in Neil Lewz) · `ended_at` · `ended_reason enum(logout, expired, revoked, staff_suspended, device_revoked)`. Sessions live in the database so revoking them takes effect immediately. As built (A7a): a session is either open (no end, no reason) or closed with a reason, never half of each; it must expire after it starts; admin sign-ins last 7 days and till sign-ins 12 hours (`SESSION_HOURS` in core). `device_id` has no foreign key until the devices table exists (A8).
 
 **`app.pin_verifications`** (step-up proof)
 `id` · `tenant_id` · `staff_id` (whose PIN was entered) · `requested_by` (staff session that asked) · `device_id` · `action_key` (e.g. `sale:below_floor`) · `entity_id null` · `verified_at` · `expires_at` (2 min) · `consumed_at`
