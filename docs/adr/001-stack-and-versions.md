@@ -124,3 +124,13 @@ The Supabase CLI and the GitHub CLI are not installed (Docker now is). Git pushe
 - The Ethiopian converter first came out one year and one day wrong: the leap day of the Ethiopian cycle falls in the third year, not the last, so the usual "four year cycle" shortcut is wrong. The year-from-day-count formula was replaced and the result is checked against `Intl` for every day of two centuries. My hand-written known dates were also wrong twice (New Year 2026 is 11 September; Adwa was 1 March), which the `Intl` cross-check exposed.
 - `core` formats whole amounts without `.00` (`12,450 ETB`, as the screen spec shows); the formatter passes the option through for places that want two decimals.
 - Language names are written in their own language in each file's `_meta`, so the picker needs no separate list.
+
+## Findings from building A12 (UI kit)
+- Plain CSS custom properties were chosen over Tailwind: no plugin or native binary to build, and a unit test can parse `tokens.css` and compute contrast. The first run of the contrast test passed everything except the dark-theme payment colours (solid chips too close to the dark surface); they were lightened and given dark text.
+- A shop's brand being one hue keeps contrast guaranteed: the test sweeps twelve hues in both themes.
+- Component tests run in jsdom with Testing Library; a real browser is still needed for layout, the hold gesture, focus and contrast, so Playwright runs the gallery at Pixel 7 and desktop sizes. `@axe-core/playwright` found a real problem on the first run (a page with no `<title>`); every page now gets a translated title.
+- Chromium for Playwright is a ~150 MB download; a timed-out download leaves a half install that looks complete (the headless shell is missing). Re-run `playwright install chromium`.
+- Playwright's mouse works in screen coordinates: a control below the fold must be scrolled into view before a raw mouse press.
+- `<output>` elements have the `status` role, so a test for the toast region selects it by its class, not by role.
+- `next-intl`, `@swc/core` and `@parcel/watcher` scripts stay denied; Playwright's own install script is denied too (browsers are installed explicitly).
+- Mutation testing of the UI logic: 76 weakenings, 71 caught first time; 1 real gap (toast tone) got a test, 4 were redundant guards (for example an empty value plus "0" is "0" either way).

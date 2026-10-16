@@ -63,3 +63,24 @@ jobs:
       # the cross-tenant leak suite for every tenant table.
       - run: pnpm run ci
       - run: pnpm build
+
+  # The pages in a real browser (Chromium) on a phone and a desktop: layout, controls, language and
+  # calendar pickers, dark mode, and an accessibility scan. Needs no database.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TURBO_TELEMETRY_DISABLED: "1"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @retail/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @retail/i18n generate
+      - run: pnpm --filter @retail/web build
+      - run: pnpm --filter @retail/web exec playwright test

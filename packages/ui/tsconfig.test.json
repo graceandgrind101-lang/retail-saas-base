@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  // Tests may read files (the design tokens) with Node.
+  "compilerOptions": { "types": ["node"] },
+  "include": ["src", "*.config.*"],
+  "exclude": []
+}

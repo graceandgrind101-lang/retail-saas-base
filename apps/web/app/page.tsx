@@ -11,7 +11,7 @@ export default async function HomePage() {
   const { calendar } = preferencesFromCookies((name) => store.get(name)?.value);
   const today = formatDate(new Date(), { locale, calendar, timeZone: "Africa/Addis_Ababa", messages: getMessages(locale) });
   return (
-    <main>
+    <main className="ui-page ui-stack">
       <h1>{t("title")}</h1>
       <p>{t("today", { date: today })}</p>
       <PreferencePicker locale={locale} calendar={calendar} />

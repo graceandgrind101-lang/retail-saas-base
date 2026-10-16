@@ -1,0 +1,204 @@
+/*
+ * Design tokens (Phase A task A12, PLAN.md §3, docs/SCREENS.md U6).
+ *
+ * Every colour is OKLCH so a shade can be reasoned about: the first number is lightness, which
+ * is what decides contrast. A test (src/tokens.test.ts) reads THIS file and checks WCAG contrast
+ * for every text pair in both themes (4.5:1 for text, 3:1 for icons and accents), so a careless
+ * edit fails CI.
+ *
+ * A shop's brand is ONE number, the hue (`--brand-hue`), never a free colour: the lightness and
+ * chroma of the accent are fixed here, so any shop's brand keeps its contrast.
+ *
+ * Light is the default. `data-theme="dark"` on <html> switches to dark; the pre-paint script
+ * (theme-script.ts) sets it before the first paint so there is no flash.
+ */
+
+:root {
+  color-scheme: light;
+  --brand-hue: 262;
+
+  /* surfaces and text */
+  --bg: oklch(98.5% 0.004 250);
+  --surface: oklch(100% 0 0);
+  --surface-2: oklch(96.5% 0.006 250);
+  --border: oklch(86% 0.01 250);
+  --text: oklch(24% 0.02 260);
+  --text-muted: oklch(46% 0.02 260);
+  --link: oklch(45% 0.17 var(--brand-hue));
+
+  /* brand accent: buttons, selected tab, focus */
+  --accent: oklch(48% 0.16 var(--brand-hue));
+  --accent-hover: oklch(42% 0.16 var(--brand-hue));
+  --on-accent: oklch(100% 0 0);
+  --focus: oklch(55% 0.18 var(--brand-hue));
+
+  /* destructive action */
+  --danger: oklch(48% 0.19 25);
+  --on-danger: oklch(100% 0 0);
+
+  /* soft status messages */
+  --ok-bg: oklch(95% 0.045 150);
+  --ok-fg: oklch(36% 0.1 150);
+  --warn-bg: oklch(95.5% 0.06 90);
+  --warn-fg: oklch(38% 0.09 80);
+  --bad-bg: oklch(95% 0.035 25);
+  --bad-fg: oklch(42% 0.17 25);
+  --note-bg: oklch(95% 0.03 250);
+  --note-fg: oklch(38% 0.12 250);
+
+  /* trends: always shown with an arrow, never colour alone */
+  --trend-up: oklch(40% 0.12 150);
+  --trend-down: oklch(44% 0.17 25);
+
+  /* alert categories (PLAN §6.3) */
+  --cat-fraud-bg: oklch(94% 0.05 340);
+  --cat-fraud-fg: oklch(38% 0.17 340);
+  --cat-suspicion-bg: oklch(95% 0.05 55);
+  --cat-suspicion-fg: oklch(40% 0.12 50);
+  --cat-error-bg: oklch(94.5% 0.04 25);
+  --cat-error-fg: oklch(42% 0.17 25);
+  --cat-alert-bg: oklch(95.5% 0.07 90);
+  --cat-alert-fg: oklch(38% 0.09 85);
+  --cat-message-bg: oklch(94.5% 0.04 300);
+  --cat-message-fg: oklch(40% 0.15 300);
+  --cat-info-bg: oklch(94.5% 0.035 250);
+  --cat-info-fg: oklch(38% 0.12 250);
+
+  /* big-number tiles (the Planning Center overview, modernised): a pastel body and a stronger strip */
+  --tile-a-bg: oklch(93% 0.03 305);
+  --tile-a-strip: oklch(78% 0.08 305);
+  --tile-b-bg: oklch(94% 0.05 165);
+  --tile-b-strip: oklch(82% 0.12 165);
+  --tile-c-bg: oklch(93% 0.04 45);
+  --tile-c-strip: oklch(78% 0.09 45);
+  --tile-d-bg: oklch(95% 0.06 95);
+  --tile-d-strip: oklch(84% 0.13 95);
+  --tile-fg: oklch(24% 0.03 290);
+
+  /* payment methods: one fixed colour, icon and label everywhere (U6) */
+  --pay-cash: oklch(44% 0.11 150);
+  --pay-telebirr: oklch(46% 0.15 250);
+  --pay-cbe: oklch(45% 0.17 305);
+  --pay-bank: oklch(45% 0.09 195);
+  --pay-dube: oklch(43% 0.03 255);
+  --on-pay: oklch(100% 0 0);
+
+  /* module identity: a thin bar beside the module's name, never a full-width band */
+  --mod-pos: oklch(55% 0.16 150);
+  --mod-inventory: oklch(55% 0.14 60);
+  --mod-payments: oklch(55% 0.15 250);
+  --mod-dube: oklch(52% 0.05 255);
+  --mod-promotions: oklch(56% 0.18 340);
+  --mod-reports: oklch(52% 0.13 285);
+  --mod-serials: oklch(54% 0.11 195);
+  --mod-announcements: oklch(56% 0.15 30);
+  --mod-storefront: oklch(54% 0.14 120);
+  --mod-manufacturing: oklch(52% 0.1 40);
+  --mod-transfers: oklch(54% 0.12 220);
+
+  /* skeletons and overlays (not text) */
+  --skeleton: oklch(92% 0.006 250);
+  --scrim: oklch(20% 0.02 260 / 0.5);
+
+  /* shape and size: made for a thumb on a 360px phone */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+  --radius-1: 0.375rem;
+  --radius-2: 0.75rem;
+  --radius-3: 1.25rem;
+  --tap: 3rem;
+  --tap-lg: 3.5rem;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Ethiopic", "Nyala", sans-serif;
+  --font-size-1: 0.8125rem;
+  --font-size-2: 1rem;
+  --font-size-3: 1.25rem;
+  --font-size-4: 1.75rem;
+  --font-size-5: 2.5rem;
+  --shadow-1: 0 1px 2px oklch(20% 0.02 260 / 0.08), 0 1px 3px oklch(20% 0.02 260 / 0.06);
+  --shadow-2: 0 8px 24px oklch(20% 0.02 260 / 0.16);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: oklch(17% 0.012 260);
+  --surface: oklch(21% 0.014 260);
+  --surface-2: oklch(26% 0.016 260);
+  --border: oklch(36% 0.016 260);
+  --text: oklch(95% 0.008 260);
+  --text-muted: oklch(76% 0.014 260);
+  --link: oklch(78% 0.13 var(--brand-hue));
+
+  --accent: oklch(74% 0.13 var(--brand-hue));
+  --accent-hover: oklch(80% 0.12 var(--brand-hue));
+  --on-accent: oklch(18% 0.03 260);
+  --focus: oklch(78% 0.14 var(--brand-hue));
+
+  --danger: oklch(72% 0.15 25);
+  --on-danger: oklch(18% 0.03 25);
+
+  --ok-bg: oklch(30% 0.05 150);
+  --ok-fg: oklch(88% 0.09 150);
+  --warn-bg: oklch(32% 0.05 85);
+  --warn-fg: oklch(90% 0.09 90);
+  --bad-bg: oklch(30% 0.06 25);
+  --bad-fg: oklch(88% 0.08 25);
+  --note-bg: oklch(30% 0.05 250);
+  --note-fg: oklch(88% 0.07 250);
+
+  --trend-up: oklch(80% 0.14 150);
+  --trend-down: oklch(80% 0.13 25);
+
+  --cat-fraud-bg: oklch(31% 0.07 340);
+  --cat-fraud-fg: oklch(88% 0.08 340);
+  --cat-suspicion-bg: oklch(32% 0.06 55);
+  --cat-suspicion-fg: oklch(89% 0.08 60);
+  --cat-error-bg: oklch(30% 0.06 25);
+  --cat-error-fg: oklch(88% 0.08 25);
+  --cat-alert-bg: oklch(32% 0.05 90);
+  --cat-alert-fg: oklch(90% 0.09 90);
+  --cat-message-bg: oklch(30% 0.06 300);
+  --cat-message-fg: oklch(88% 0.07 300);
+  --cat-info-bg: oklch(30% 0.05 250);
+  --cat-info-fg: oklch(88% 0.07 250);
+
+  --tile-a-bg: oklch(30% 0.05 305);
+  --tile-a-strip: oklch(42% 0.1 305);
+  --tile-b-bg: oklch(30% 0.05 165);
+  --tile-b-strip: oklch(42% 0.09 165);
+  --tile-c-bg: oklch(30% 0.05 45);
+  --tile-c-strip: oklch(43% 0.09 45);
+  --tile-d-bg: oklch(32% 0.05 95);
+  --tile-d-strip: oklch(44% 0.09 95);
+  --tile-fg: oklch(96% 0.01 290);
+
+  --pay-cash: oklch(70% 0.14 150);
+  --pay-telebirr: oklch(70% 0.13 250);
+  --pay-cbe: oklch(70% 0.14 305);
+  --pay-bank: oklch(70% 0.1 195);
+  --pay-dube: oklch(70% 0.03 255);
+  --on-pay: oklch(16% 0.02 260);
+
+  --mod-pos: oklch(72% 0.15 150);
+  --mod-inventory: oklch(74% 0.13 65);
+  --mod-payments: oklch(72% 0.13 250);
+  --mod-dube: oklch(72% 0.05 255);
+  --mod-promotions: oklch(74% 0.15 340);
+  --mod-reports: oklch(72% 0.12 285);
+  --mod-serials: oklch(72% 0.1 195);
+  --mod-announcements: oklch(74% 0.13 30);
+  --mod-storefront: oklch(74% 0.13 125);
+  --mod-manufacturing: oklch(72% 0.09 45);
+  --mod-transfers: oklch(72% 0.11 220);
+
+  --skeleton: oklch(28% 0.014 260);
+  --scrim: oklch(5% 0.01 260 / 0.65);
+
+  --shadow-1: 0 1px 2px oklch(0% 0 0 / 0.4);
+  --shadow-2: 0 8px 24px oklch(0% 0 0 / 0.5);
+}

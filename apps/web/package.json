@@ -9,7 +9,8 @@
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "e2e": "pnpm --filter @retail/i18n generate && next build && playwright test"
   },
   "dependencies": {
     "@retail/core": "workspace:*",
@@ -31,6 +32,8 @@
     "eslint": "catalog:",
     "eslint-config-next": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "@playwright/test": "catalog:",
+    "@axe-core/playwright": "catalog:"
   }
 }
