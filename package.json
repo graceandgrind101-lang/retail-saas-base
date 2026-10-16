@@ -18,7 +18,9 @@
     "secrets:generate": "node scripts/generate-secrets.mjs",
     "db:up": "docker compose -f infra/dev-db/compose.yaml up -d --wait",
     "db:down": "docker compose -f infra/dev-db/compose.yaml down",
-    "db:reset": "docker compose -f infra/dev-db/compose.yaml down -v && docker compose -f infra/dev-db/compose.yaml up -d --wait"
+    "db:reset": "docker compose -f infra/dev-db/compose.yaml down -v && docker compose -f infra/dev-db/compose.yaml up -d --wait",
+    "db:migrate": "pnpm --filter @retail/db migrate",
+    "db:check": "pnpm --filter @retail/db check:db-security"
   },
   "devDependencies": {
     "turbo": "catalog:",

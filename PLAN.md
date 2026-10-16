@@ -37,6 +37,8 @@
 | D23 | Calendar | **Gregorian by default.** The Ethiopian calendar is an option (shop setting, and per user). Dates are always stored in Gregorian UTC. Supersedes the calendar part of D22/U7. |
 | D24 | Hosting for now | **No Ethiopian servers for now** (owner decision): Ethiopian providers have no free tier. Build and run the working product on **free/cheap cloud tiers** (Supabase, Cloudflare). Migrate to Ethiopian servers later, when needed. The code stays portable (D13), which keeps that migration a config change. Supersedes D14 (quotes deferred). Consequences: Telebirr and M-Pesa receipt lookups, which only answer Ethiopian IPs, wait for the migration; CBE, BOA and Dashen lookups can be tried from abroad in Phase C. |
 | D25 | Phase A build plan | **Approved:** B1–B5 in [docs/PHASE_A_PLAN.md](docs/PHASE_A_PLAN.md) §0: only `apps/web` in Phase A, pilot tenants created by script, local Docker database for dev/tests, tests written with each task, deploy from week 2, versions checked on day 1. |
+| D26 | App database login | **Refines DATA_MODEL M3 (found while building A4).** The shop app logs in as a limited role, `retail_app`: no `BYPASSRLS`, no inherited rights, no privileges until a request switches to `authenticated` inside `db.rls()`. Forgetting the wrapper gives a loud "permission denied", never another shop's data. The owner login (`postgres`) is used only for migrations, scripts and `db.admin`, and its URL (`DATABASE_ADMIN_URL`) is never given to the web app. `DATABASE_URL` for the web app is the `retail_app` URL. |
+| D27 | Isolation tests | **Replaces "pgTAP" in the plan.** Cross-tenant leak tests are Vitest tests against a real Postgres (the same Supabase image), driven through the real `db.rls()` wrapper, with a generic leak suite that every tenant table must pass. They run on a separate throwaway test database container so they never touch dev data or share its roles. A CI check reads the database catalog itself (RLS on, forced, the exact policy, grants, schema lockdown) and every `app` table must have a leak fixture. Why not pgTAP: one runner, TypeScript-native, no psql dependency on CI, and it exercises the actual wrapper. |
 
 ---
 
@@ -108,7 +110,7 @@ retail-saas/
 | OCR | tesseract.js 7 in the browser → Workers AI vision as fallback | OCR is never proof; the bank lookup is. |
 | Bot | grammY | HTML mode, `<code>` tap-to-copy. |
 | Hosting | Cloudflare Workers via OpenNext, **kept portable** | Cloudflare now steers new apps to "vinext" (beta). Keep platform APIs behind `packages/core` interfaces so moving to Vercel, vinext or a Node server in Ethiopia is a config change. |
-| Quality | Vitest, Playwright (Pixel-7 emulation, offline mode), pgTAP RLS leak tests, Sentry (client), PostHog | |
+| Quality | Vitest, Playwright (Pixel-7 emulation, offline mode), database leak tests (Vitest on real Postgres, D27), Sentry (client), PostHog | |
 
 ### 2.3 ⚠️ Hosting location (deferred by D24; must be answered before paid launch)
 
@@ -130,8 +132,8 @@ Options:
 
 - `tenants`, `branches`, `memberships(user_id, tenant_id, role_id, branch_scope)`; `tenant_id` on **every** business table, as the leading column of its indexes.
 - RLS through a security-definer helper `private.my_tenant_ids()` in a non-exposed schema. Policies use `(select …)` wrapping. JWT claims are only a UI hint, **never** authorization.
-- Drizzle connects as the database owner, which **bypasses RLS**. All tenant queries go through `db.rls(tx => …)`, which sets role `authenticated` and claims. `db.admin` is importable only by `console` and cron jobs (enforced by a lint rule).
-- pgTAP tests prove that no table leaks across tenants.
+- The owner login **bypasses RLS**, so the shop app does not use it: it logs in as the limited role `retail_app` (D26) and every tenant query goes through `db.rls(tx => …)`, which switches to role `authenticated` and sets the claims. `db.admin` (owner login) is importable only by `console`, cron jobs, `packages/db` and scripts (enforced by a lint rule).
+- Vitest leak tests on a real Postgres prove that no table leaks across tenants, and a catalog-reading CI check proves every table is configured the same way (D27).
 - IDs are UUIDv7, generated on the device, so offline sales are idempotent.
 - **Full table design for Phase A:** [docs/DATA_MODEL.md](docs/DATA_MODEL.md) (approved, D20); Phase B in [docs/DATA_MODEL_B.md](docs/DATA_MODEL_B.md). It changes the RLS context: one active tenant per request, set by the server, which also covers PIN-only cashiers who have no auth account.
 

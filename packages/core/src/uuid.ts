@@ -80,6 +80,13 @@ export function createUuidV7Generator(options: UuidV7Options = {}): () => string
 /** The shared generator. Ids from this one are strictly increasing within this process. */
 export const uuidv7: () => string = createUuidV7Generator();
 
+const ANY_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** True for a well-formed RFC 9562 UUID of any version 1-8 (not the nil or max UUID). */
+export function isUuid(value: string): boolean {
+  return ANY_UUID.test(value);
+}
+
 const UUID_V7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function isUuidV7(value: string): boolean {

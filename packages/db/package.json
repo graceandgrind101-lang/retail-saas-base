@@ -10,12 +10,24 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run",
+    "migrate": "tsx src/bin/migrate.ts",
+    "generate": "drizzle-kit generate",
+    "check:db-security": "tsx src/bin/check-db-security.ts"
   },
   "devDependencies": {
     "@retail/config": "workspace:*",
     "eslint": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "drizzle-kit": "catalog:",
+    "tsx": "catalog:",
+    "@types/node": "catalog:"
+  },
+  "dependencies": {
+    "@retail/core": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "postgres": "catalog:",
+    "zod": "catalog:"
   }
 }

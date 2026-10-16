@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createUuidV7Generator, isUuidV7, uuidV7Timestamp, uuidv7 } from "./uuid";
+import { createUuidV7Generator, isUuid, isUuidV7, uuidV7Timestamp, uuidv7 } from "./uuid";
 
 const T = 0x0123_4567_89ab; // a fixed timestamp, in ms
 const zeros = () => new Uint8Array(10);
@@ -118,5 +118,30 @@ describe("validation", () => {
 
   it("uuidV7Timestamp throws for a non-v7 id", () => {
     expect(() => uuidV7Timestamp("550e8400-e29b-41d4-a716-446655440000")).toThrow(TypeError);
+  });
+});
+
+describe("isUuid (any version)", () => {
+  it("accepts well-formed v4 and v7 ids in any case", () => {
+    expect(isUuid("550e8400-e29b-41d4-a716-446655440000")).toBe(true);
+    expect(isUuid("550E8400-E29B-41D4-A716-446655440000")).toBe(true);
+    expect(isUuid(uuidv7())).toBe(true);
+  });
+
+  it("rejects malformed values and values that could be injection attempts", () => {
+    for (const bad of [
+      "",
+      "not-a-uuid",
+      "550e8400e29b41d4a716446655440000", // no dashes
+      "550e8400-e29b-41d4-a716-44665544000", // short
+      "550e8400-e29b-41d4-a716-4466554400000", // long
+      "550e8400-e29b-91d4-a716-446655440000", // version 9
+      "550e8400-e29b-41d4-c716-446655440000", // bad variant
+      "00000000-0000-0000-0000-000000000000", // nil
+      "550e8400-e29b-41d4-a716-446655440000'; drop table x;--",
+      " 550e8400-e29b-41d4-a716-446655440000",
+    ]) {
+      expect(isUuid(bad)).toBe(false);
+    }
   });
 });

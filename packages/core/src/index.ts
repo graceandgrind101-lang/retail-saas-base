@@ -5,4 +5,5 @@ export * from "./money";
 export * from "./qty";
 export * from "./rounding";
 export * from "./tax";
+export * from "./types";
 export * from "./uuid";

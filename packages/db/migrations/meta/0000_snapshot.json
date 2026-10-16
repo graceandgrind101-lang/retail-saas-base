@@ -1,0 +1,164 @@
+{
+  "id": "fff7a193-1cd8-4891-baa8-922861cf9997",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "platform.tenants": {
+      "name": "tenants",
+      "schema": "platform",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "legal_name": {
+          "name": "legal_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tin": {
+          "name": "tin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "industry": {
+          "name": "industry",
+          "type": "industry",
+          "typeSchema": "platform",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "plan_key": {
+          "name": "plan_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "tenant_status",
+          "typeSchema": "platform",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pilot'"
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Africa/Addis_Ababa'"
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ETB'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "paused_at": {
+          "name": "paused_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closed_at": {
+          "name": "closed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tenants_slug_unique": {
+          "name": "tenants_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "tenants_slug_format": {
+          "name": "tenants_slug_format",
+          "value": "\"platform\".\"tenants\".\"slug\" ~ '^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$'"
+        },
+        "tenants_slug_not_reserved": {
+          "name": "tenants_slug_not_reserved",
+          "value": "slug NOT IN ('app', 'console', 'www', 'api', 'admin', 'static', 'assets', 'mail', 'bot', 'verifier', 'status', 'help', 'docs')"
+        },
+        "tenants_display_name_not_empty": {
+          "name": "tenants_display_name_not_empty",
+          "value": "jsonb_typeof(\"platform\".\"tenants\".\"display_name\") = 'object' AND \"platform\".\"tenants\".\"display_name\" <> '{}'::jsonb"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "platform.industry": {
+      "name": "industry",
+      "schema": "platform",
+      "values": [
+        "electronics",
+        "minimarket",
+        "cosmetics",
+        "food",
+        "other"
+      ]
+    },
+    "platform.tenant_status": {
+      "name": "tenant_status",
+      "schema": "platform",
+      "values": [
+        "pilot",
+        "trial",
+        "active",
+        "past_due",
+        "paused",
+        "closed"
+      ]
+    }
+  },
+  "schemas": {
+    "platform": "platform",
+    "app": "app"
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

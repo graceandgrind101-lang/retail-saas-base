@@ -1,4 +1,8 @@
 {
   "extends": "@retail/config/tsconfig/base.json",
-  "include": ["src", "*.config.*"]
+  "compilerOptions": {
+    // TypeScript 6 no longer loads @types/* automatically. This package runs on Node.
+    "types": ["node"]
+  },
+  "include": ["src", "test", "*.config.*"]
 }

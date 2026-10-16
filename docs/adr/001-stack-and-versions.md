@@ -42,11 +42,22 @@
 - **`.env` files are read from `apps/web/`**, not the repo root. `NEXT_PUBLIC_*` values are frozen into the bundle at build time; server values are read at runtime.
 - **OpenNext / Cloudflare (task week-2 deploy):** whether `register()` runs there is unverified. `serverEnv()` also validates on first use, so a bad environment still fails closed. Check this on the first Workers deploy.
 
+## Findings from building A4 (database foundation)
+
+- **TypeScript 6 no longer loads `@types/*` automatically** (`types` now defaults to nothing). Each package opts in: `packages/db` sets `"types": ["node"]`; `packages/core` deliberately sets none, which keeps it free of Node and DOM globals (it must stay pure).
+- **esbuild install scripts denied** (`allowBuilds: esbuild: false`), same reasoning as `unrs-resolver`: they only swap a launcher for the native binary as a speed optimisation. `drizzle-kit` and `tsx` both run fine without them. `tsx` 4.23.15 added for running TypeScript scripts.
+- **Never write Drizzle's breakpoint marker inside a comment** in a migration file. The runner splits on the literal text, even in a comment, and breaks the file mid-sentence (this happened). The marker is the two-dash, greater-than, "statement-breakpoint" comment.
+- **PostgreSQL 16+: a non-superuser migration role cannot name `NOSUPERUSER`, `NOBYPASSRLS` or `NOREPLICATION` in `ALTER ROLE`.** A new role already has all of those off, so migration 0001 only sets `NOINHERIT`; the rest is asserted by the security check.
+- **Postgres array equality includes the starting index.** `pg_index.indkey` is a zero-based vector, so comparing it with a one-based array always fails. The security check compares its text form instead.
+- **Test ordering must never hide a bad migration.** Vitest runs previously failed files first, and one test grants then revokes a privilege to prove the checker notices. A weakened migration was therefore "repaired" by that test before another test looked at it, and a mutation slipped through. The fix: the freshly migrated test database is verified once in `global-setup.ts`, before any test runs, and the run aborts if it is not secure.
+- **Mutation testing is part of how security rules are accepted** (CLAUDE.md). For A4, 12 deliberate weakenings of the migration and 8 of the TypeScript were applied one at a time and each had to be caught.
+
 ## Local development database
 
 - **Image:** `supabase/postgres:17.11.0.003` (pinned; 17.11.0.004 existed but was two days old). Same Postgres build as Supabase cloud, so roles (`anon`, `authenticated`, `service_role`) and pgTAP behave as in production. Started with `pnpm db:up` from `infra/dev-db/compose.yaml`, bound to `127.0.0.1:54322` only.
 - **Role facts verified on the running image:** `postgres` is not a superuser but has `BYPASSRLS`; `authenticated` has neither. Row-level security is therefore only enforced after `set local role authenticated`, which is what `db.rls()` does (DATA_MODEL M3). Tests must go through that wrapper, never connect as `postgres` and expect RLS to apply.
 - **Why not the Supabase CLI for now:** A4-A6 need only Postgres. The CLI starts ~10 containers; we add it in A7 when Supabase Auth is needed.
+- **Two containers:** `db` (dev data, port 54322, kept) and `db-test` (port 54323, in memory, wiped on stop). Tests only ever use `db-test`: they create a fresh database each run and set role passwords, and roles are shared by a whole Postgres server, so they must not share one with dev data.
 
 ## Not yet available on the dev machine
 

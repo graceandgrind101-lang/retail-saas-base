@@ -20,6 +20,8 @@
 | M8 | **Tenant data is never hard-deleted by the app.** Rows are archived (`archived_at`). Closing a tenant = status `closed` + export. Deletion is a console job after the retention period. | Tax retention is 10 years (§6.1). Kippa's users lost their data (RESEARCH §3). |
 | M9 | **PINs are 6 digits**, hashed with a server pepper (HMAC) then PBKDF2-SHA256 via WebCrypto, so it runs on Workers. After 5 failures the staff member *and* the device are locked for 15 minutes and a Suspicion alert is raised. PIN hashes never leave the server (D18). | Matches the theft-control pitch. WebCrypto avoids a heavy argon2 WASM bundle on Workers. |
 
+**M3 refinement (D26, 2026-10-16):** the shop app does not connect as the database owner. It logs in as `retail_app`, a role with no `BYPASSRLS`, no inherited privileges and no access until `db.rls()` switches to `authenticated`. This turns "forgot the wrapper" from a silent data leak into an immediate permission error. Migrations, scripts and `db.admin` use the owner login (`DATABASE_ADMIN_URL`), which the web app never receives. Known limit: anyone who can run arbitrary SQL as `authenticated` could call `set_config('app.tenant_id', ...)`. That is why only server code may run SQL and every query is parameterized (see the threat model comment in migration 0001).
+
 **Lesson from Neil Lewz:** its session secret falls back to the service-role key or `"dev-only-secret"`. Here every secret (session signing, PIN pepper, reference pepper, device token pepper) is separate and **required at boot**. A missing secret stops the app; there is no fallback.
 
 ---

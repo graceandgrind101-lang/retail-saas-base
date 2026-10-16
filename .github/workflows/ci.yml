@@ -15,10 +15,29 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       TURBO_TELEMETRY_DISABLED: "1"
       NEXT_TELEMETRY_DISABLED: "1"
+      # Throwaway CI database. Same default as the local test container, so the test suite
+      # needs no configuration. The password is for this disposable service only.
+      TEST_DATABASE_ADMIN_URL: postgresql://postgres:postgres@127.0.0.1:54323/postgres
+
+    # The same Postgres build Supabase runs, pinned exactly like infra/dev-db/compose.yaml.
+    services:
+      db-test:
+        image: supabase/postgres:17.11.0.003
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 54323:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -h 127.0.0.1"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 30
+
     steps:
       - uses: actions/checkout@v4
       # pnpm version comes from "packageManager" in package.json
@@ -28,6 +47,19 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # brand check + lint + typecheck + tests (package.json "ci" script)
+
+      # Apply the migrations to a real database with the production command, then ask the
+      # database itself whether tenant isolation holds. Fails the build if any table is not
+      # secured (PLAN.md D27).
+      - name: Migrate and check database security
+        run: |
+          pnpm db:migrate
+          pnpm db:check
+        env:
+          DATABASE_ADMIN_URL: postgresql://postgres:postgres@127.0.0.1:54323/postgres
+          APP_DB_PASSWORD: ci-only-password-not-a-secret-0123456789
+
+      # brand check + lint + typecheck + tests (package.json "ci" script). The tests include
+      # the cross-tenant leak suite for every tenant table.
       - run: pnpm run ci
       - run: pnpm build
