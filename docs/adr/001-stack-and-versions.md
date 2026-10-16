@@ -87,3 +87,9 @@
 ## Not yet available on the dev machine
 
 The Supabase CLI and the GitHub CLI are not installed (Docker now is). Git pushes use Git Credential Manager (browser sign-in), so the GitHub CLI is not needed.
+
+## Findings from building A7b (web sign-in)
+- Next logs an error thrown from `instrumentation.ts` but keeps serving HTTP 500; the process must exit explicitly. `process.exit` is kept in `instrumentation-node.ts` (loaded only on Node) so the Edge analysis has nothing to warn about.
+- postgres.js on `prepare:false` connections cannot serialise objects or `Date`: pass JSON as text with `::text::jsonb` and times as ISO strings with `::timestamptz`.
+- Test database uses a fixed throwaway password; `@retail/db/testing` holds the shared helpers. `core` has no Node types, so its tests use `tsconfig.test.json`.
+- Route files may only export HTTP verbs/config, so logic lives in `lib/auth` and a test checks every route file.

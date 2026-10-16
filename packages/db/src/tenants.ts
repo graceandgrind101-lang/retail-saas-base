@@ -82,6 +82,17 @@ export interface ProvisionedTenant {
 
 const EMAIL_SHAPE = /^[^\s@\u0000-\u001f]+@[^\s@\u0000-\u001f]+\.[^\s@\u0000-\u001f]+$/;
 
+/**
+ * JSON as TEXT, always used with an explicit `::text::jsonb` cast in the SQL. (Plain `::jsonb` is not
+ * enough: on a normal connection postgres.js then sees a JSON parameter and encodes our text a second
+ * time, storing a JSON *string*. Going through `::text` keeps the parameter plain text in both modes.) postgres.js cannot
+ * serialise objects (`sql.json()`, or a `Date`) on connections without prepared statements, which
+ * is how `createAdminDb` connects so it keeps working behind poolers such as Cloudflare Hyperdrive
+ * (PLAN.md D13). So everything here is passed as plain text or numbers, with casts in the SQL.
+ * A test provisions a shop through exactly such a connection.
+ */
+const json = (value: unknown): string => JSON.stringify(value);
+
 function validate(input: ProvisionTenantInput): ModuleKey[] {
   if (!isValidTenantSlug(input.slug)) {
     throw new TenantProvisioningError(
@@ -138,7 +149,7 @@ export async function provisionTenant(sql: Sql, input: ProvisionTenantInput): Pr
     await sql.begin(async (tx) => {
       await tx`
         insert into platform.tenants (id, slug, display_name, legal_name, tin, industry, plan_key, status)
-        values (${tenantId}, ${input.slug}, ${tx.json(input.displayName as never)}, ${input.legalName ?? null},
+        values (${tenantId}, ${input.slug}, ${json(input.displayName)}::text::jsonb, ${input.legalName ?? null},
                 ${input.tin ?? null}, ${input.industry}, ${input.planKey}, ${input.status ?? "pilot"})`;
 
       for (const moduleKey of modules) {
@@ -147,12 +158,12 @@ export async function provisionTenant(sql: Sql, input: ProvisionTenantInput): Pr
 
       await tx`
         insert into app.branches (id, tenant_id, name, is_default)
-        values (${branchId}, ${tenantId}, ${tx.json(DEFAULT_BRANCH_NAME as never)}, true)`;
+        values (${branchId}, ${tenantId}, ${json(DEFAULT_BRANCH_NAME)}::text::jsonb, true)`;
 
       for (const key of SYSTEM_ROLE_KEYS) {
         await tx`
           insert into app.roles (id, tenant_id, key, name, is_system, template_key)
-          values (${roleIds[key]}, ${tenantId}, ${key}, ${tx.json(SYSTEM_ROLES[key].name as never)}, true, ${key})`;
+          values (${roleIds[key]}, ${tenantId}, ${key}, ${json(SYSTEM_ROLES[key].name)}::text::jsonb, true, ${key})`;
       }
 
       if (input.owner && ownerInvite) {
@@ -161,19 +172,19 @@ export async function provisionTenant(sql: Sql, input: ProvisionTenantInput): Pr
         await tx`
           insert into app.staff (id, tenant_id, display_name, role_id, status, invite_email, invite_token_hash, invite_expires_at)
           values (${ownerInvite.staffId}, ${tenantId}, ${input.owner.displayName.trim()}, ${roleIds.owner}, 'invited',
-                  ${input.owner.email.trim().toLowerCase()}, ${inviteTokenHash}, ${ownerInvite.expiresAt})`;
+                  ${input.owner.email.trim().toLowerCase()}, ${inviteTokenHash}, ${ownerInvite.expiresAt.toISOString()}::timestamptz)`;
       }
 
       await tx`
         select audit.record_event_for(
           ${tenantId}::uuid, 'tenant.created',
-          ${tx.json({
+          ${json({
             slug: input.slug,
             industry: input.industry,
             plan: input.planKey,
             modules,
             ownerInvited: input.owner !== undefined,
-          } as never)})`;
+          })}::text::jsonb)`;
     });
   } catch (error) {
     const e = error as { code?: string; constraint_name?: string };

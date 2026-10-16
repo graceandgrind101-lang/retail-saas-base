@@ -19,7 +19,8 @@
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "jose": "catalog:"
   },
   "devDependencies": {
     "@retail/config": "workspace:*",

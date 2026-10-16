@@ -28,6 +28,7 @@ catalog:
   drizzle-kit: 0.31.11
   postgres: 3.4.9
   aws4fetch: 1.0.20
+  jose: 6.2.12
   tsx: 4.23.15
   # ui and i18n
   tailwindcss: 4.3.3

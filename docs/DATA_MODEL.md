@@ -138,6 +138,8 @@ The Supabase Data API exposes **none** of these (M3).
 
 **`app.device_pairing_codes`**: `id` · `tenant_id` · `branch_id` · `code_hash` · `created_by` · `expires_at` (10 min) · `used_at` · `used_by_device_id`. The code is single-use.
 
+**As built (A7b).** The web layer (`apps/web/lib/auth`) verifies the login token, calls `app.my_shops`, `accept_invite`, `start_session`, `end_my_session`, and keeps the session in a signed cookie holding only the staff, session and shop ids; the database re-checks the session on every request (§2).
+
 **`app.staff_sessions`**: `id` · `tenant_id` · `staff_id` · `device_id null` · `method enum(pin, password, google, telegram)` · `started_at` · `expires_at` (POS 12h, as in Neil Lewz) · `ended_at` · `ended_reason enum(logout, expired, revoked, staff_suspended, device_revoked)`. Sessions live in the database so revoking them takes effect immediately. As built (A7a): a session is either open (no end, no reason) or closed with a reason, never half of each; it must expire after it starts; admin sign-ins last 7 days and till sign-ins 12 hours (`SESSION_HOURS` in core). `device_id` has no foreign key until the devices table exists (A8).
 
 **`app.pin_verifications`** (step-up proof)

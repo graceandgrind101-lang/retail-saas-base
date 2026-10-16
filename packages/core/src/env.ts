@@ -43,6 +43,11 @@ const httpUrl = () =>
 export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: httpUrl(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: text().min(20, "looks too short to be a Supabase anon key"),
+  /**
+   * Where this app is served, e.g. https://app.example.com (no path). Requests that change
+   * anything must come from this origin, and the session cookie is marked Secure when it is https.
+   */
+  NEXT_PUBLIC_APP_URL: httpUrl(),
 });
 
 /** Names of every variable holding a secret value. Each one must differ from all others. */
@@ -52,6 +57,7 @@ export const SECRET_NAMES = [
   "DEVICE_TOKEN_PEPPER",
   "REFERENCE_PEPPER",
   "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_JWT_SECRET",
 ] as const;
 
 export const serverEnvSchema = publicEnvSchema
@@ -66,11 +72,18 @@ export const serverEnvSchema = publicEnvSchema
     DEVICE_TOKEN_PEPPER: secret(),
     /** Keyed hash for payment references in the cross-shop registry (Phase C). */
     REFERENCE_PEPPER: secret(),
+    /**
+     * Verifies login tokens signed with the project's shared secret (HS256: local Supabase and
+     * older cloud projects). Leave EMPTY for projects that sign with asymmetric keys: the public
+     * keys are then fetched from the project's JWKS address. An empty value counts as unset.
+     */
+    SUPABASE_JWT_SECRET: z.preprocess((value) => (value === "" ? undefined : value), secret().optional()),
   })
   .superRefine((env, ctx) => {
     SECRET_NAMES.forEach((name, i) => {
       for (const earlier of SECRET_NAMES.slice(0, i)) {
-        if (env[name] === env[earlier]) {
+        // An optional secret that is not set is not "equal" to another one that is not set.
+        if (env[name] !== undefined && env[name] === env[earlier]) {
           ctx.addIssue({
             code: "custom",
             path: [name],

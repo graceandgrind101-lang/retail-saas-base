@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { SYSTEM_ROLES, SYSTEM_ROLE_KEYS, isSystemRoleKey, SESSION_HOURS } from "./roles";
-import { INVITE_TOKEN_BYTES, base64url, generateInviteToken, hashInviteToken, isWellFormedInviteToken } from "./invite";
+import { base64url } from "./encoding";
+import { INVITE_TOKEN_BYTES, generateInviteToken, hashInviteToken, isWellFormedInviteToken } from "./invite";
 
 describe("base64url", () => {
   it("matches Node's own encoder for every length from 0 to 40 bytes", () => {

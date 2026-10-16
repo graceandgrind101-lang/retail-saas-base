@@ -104,3 +104,39 @@ export async function endMySession(tx: RlsTransaction, reason: Extract<SessionEn
     throw translateAuthError(error);
   }
 }
+
+export interface MyStaff {
+  staffId: string;
+  name: string;
+  roleKey: string;
+  /** Null follows the shop's default (English unless the shop changed it). */
+  language: string | null;
+  calendar: "gregorian" | "ethiopian" | null;
+  theme: "system" | "light" | "dark" | null;
+}
+
+/** Who the signed-in person is in this shop (name, role, their own display preferences). */
+export async function getMyStaff(tx: RlsTransaction): Promise<MyStaff | null> {
+  const rows = await tx.execute<{
+    id: string;
+    display_name: string;
+    role_key: string;
+    preferred_language: string | null;
+    preferred_calendar: MyStaff["calendar"];
+    theme: MyStaff["theme"];
+  }>(sql`
+    select s.id, s.display_name, r.key as role_key, s.preferred_language, s.preferred_calendar, s.theme
+    from app.staff s
+    join app.roles r on r.tenant_id = s.tenant_id and r.id = s.role_id
+    where s.id = private.ctx_staff()`);
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    staffId: row.id,
+    name: row.display_name,
+    roleKey: row.role_key,
+    language: row.preferred_language,
+    calendar: row.preferred_calendar,
+    theme: row.theme,
+  };
+}

@@ -5,6 +5,7 @@ import { EnvError, SECRET_NAMES, parsePublicEnv, parseServerEnv } from "./env";
 const valid = {
   NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key-0123456789-abcdefghij",
+  NEXT_PUBLIC_APP_URL: "http://localhost:3000",
   DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
   SUPABASE_SERVICE_ROLE_KEY: "service-role-key-0123456789-ABCDEFGHIJ",
   SESSION_SECRET: "k3Jf9aQ2xLm7ZpR1tVb8nWc4yHd6sGu0",
@@ -111,11 +112,40 @@ describe("parseServerEnv (boot-time environment check)", () => {
   });
 });
 
+describe("the sign-in settings", () => {
+  it("the app address is required and must be an http(s) URL", () => {
+    const env: Record<string, string | undefined> = { ...valid };
+    delete env.NEXT_PUBLIC_APP_URL;
+    expect(problemsOf(env).some((p) => p.startsWith("NEXT_PUBLIC_APP_URL:"))).toBe(true);
+    expect(problemsOf({ ...valid, NEXT_PUBLIC_APP_URL: "ftp://x.test" }).some((p) => p.startsWith("NEXT_PUBLIC_APP_URL:"))).toBe(true);
+    expect(problemsOf({ ...valid, NEXT_PUBLIC_APP_URL: "app.example.com" }).some((p) => p.startsWith("NEXT_PUBLIC_APP_URL:"))).toBe(true);
+  });
+
+  it("the token-signing secret is optional, and an empty value counts as not set", () => {
+    expect(problemsOf(valid)).toEqual([]);
+    expect(problemsOf({ ...valid, SUPABASE_JWT_SECRET: "" })).toEqual([]);
+    expect(parseServerEnv({ ...valid, SUPABASE_JWT_SECRET: "" }).SUPABASE_JWT_SECRET).toBeUndefined();
+  });
+
+  it("when given, it must be a strong secret of its own", () => {
+    expect(problemsOf({ ...valid, SUPABASE_JWT_SECRET: "short" }).some((p) => p.startsWith("SUPABASE_JWT_SECRET:"))).toBe(true);
+    expect(problemsOf({ ...valid, SUPABASE_JWT_SECRET: "a".repeat(40) }).some((p) => p.includes("low-entropy"))).toBe(true);
+    expect(problemsOf({ ...valid, SUPABASE_JWT_SECRET: valid.SESSION_SECRET }).some((p) => p.includes("must differ from"))).toBe(true);
+    expect(problemsOf({ ...valid, SUPABASE_JWT_SECRET: "Mn4bVc7xZl1kJh8gFd3sAp6oIu9yTr2e" })).toEqual([]);
+  });
+
+  it("two unset optional secrets are not treated as equal to each other", () => {
+    // only one optional secret exists today; this guards the comparison for any future one
+    expect(problemsOf({ ...valid, SUPABASE_JWT_SECRET: undefined })).toEqual([]);
+  });
+});
+
 describe("parsePublicEnv", () => {
   it("needs only the NEXT_PUBLIC_ values", () => {
     const pub = parsePublicEnv({
       NEXT_PUBLIC_SUPABASE_URL: valid.NEXT_PUBLIC_SUPABASE_URL,
       NEXT_PUBLIC_SUPABASE_ANON_KEY: valid.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      NEXT_PUBLIC_APP_URL: valid.NEXT_PUBLIC_APP_URL,
     });
     expect(pub.NEXT_PUBLIC_SUPABASE_URL).toBe(valid.NEXT_PUBLIC_SUPABASE_URL);
   });

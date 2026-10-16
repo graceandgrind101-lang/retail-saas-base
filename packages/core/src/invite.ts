@@ -1,3 +1,4 @@
+import { base64url } from "./encoding";
 import { secureRandom, type RandomFill } from "./uuid";
 
 /**
@@ -9,24 +10,6 @@ import { secureRandom, type RandomFill } from "./uuid";
 
 export const INVITE_TOKEN_BYTES = 32;
 export const INVITE_VALID_DAYS = 14;
-
-const URL_SAFE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-
-/** Base64url without padding. Written out by hand because core has no Buffer or btoa. */
-export function base64url(bytes: Uint8Array): string {
-  let out = "";
-  for (let i = 0; i < bytes.length; i += 3) {
-    const a = bytes[i] ?? 0;
-    const b = bytes[i + 1] ?? 0;
-    const c = bytes[i + 2] ?? 0;
-    const chunk = (a << 16) | (b << 8) | c;
-    out += URL_SAFE[(chunk >> 18) & 63];
-    out += URL_SAFE[(chunk >> 12) & 63];
-    if (i + 1 < bytes.length) out += URL_SAFE[(chunk >> 6) & 63];
-    if (i + 2 < bytes.length) out += URL_SAFE[chunk & 63];
-  }
-  return out;
-}
 
 /** 43 URL-safe characters (32 random bytes). */
 export function generateInviteToken(random: RandomFill = secureRandom): string {

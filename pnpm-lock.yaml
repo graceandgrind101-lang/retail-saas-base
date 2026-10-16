@@ -188,6 +188,9 @@ catalogs:
     eslint-config-next:
       specifier: 16.4.2
       version: 16.4.2
+    jose:
+      specifier: 6.2.12
+      version: 6.2.12
     next:
       specifier: 16.4.2
       version: 16.4.2
@@ -244,6 +247,9 @@ importers:
       '@retail/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      jose:
+        specifier: 'catalog:'
+        version: 6.2.12
       next:
         specifier: 'catalog:'
         version: 16.4.2(@babel/core@7.29.7)(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -2380,6 +2386,9 @@ packages:
   iterator.prototype@1.1.5:
     resolution: {integrity: sha512-H0dkQoCa3b2VEeKQBOxFph+JAbcrQdE7KC0UkqwpLmv2EC4P41QXP+rqo9wYodACiG5/WM5s9oDApTU8utwj9g==}
     engines: {node: '>= 0.4'}
+
+  jose@6.2.12:
+    resolution: {integrity: sha512-9NiFmJEex0sy2Dk58j2UGBSHgUs2ypF9eZSu4L6vjOX3Dp96Sw1F3uL+H+D1sx02jZZdzUT0HgvCy59CuvXcWw==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -4895,6 +4904,8 @@ snapshots:
       get-proto: 1.0.1
       has-symbols: 1.1.0
       set-function-name: 2.0.2
+
+  jose@6.2.12: {}
 
   js-tokens@4.0.0: {}
 

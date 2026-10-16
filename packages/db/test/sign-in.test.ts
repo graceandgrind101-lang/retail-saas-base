@@ -14,6 +14,7 @@ import {
 import { InvalidRlsContextError, createTenantDb, type RlsContext, type TenantDb } from "../src/rls";
 import { acceptInvite, endMySession, listMyShops, startSession } from "../src/sign-in";
 import { isShopReadOnlyError } from "../src/tenant-info";
+import { createAdminDb } from "../src/admin";
 import { TenantProvisioningError, provisionTenant } from "../src/tenants";
 import { PG, adminSql, appUrl, createTenant, expectPgError, newId, randomLetters } from "./helpers";
 
@@ -69,6 +70,24 @@ describe("creating a shop: roles and the owner's invitation", () => {
       expect(row.template_key).toBe(row.key);
       expect(row.name).toEqual(SYSTEM_ROLES[row.key as keyof typeof SYSTEM_ROLES].name);
       expect(shop.roleIds[row.key as keyof typeof shop.roleIds]).toBe(row.id);
+    }
+  });
+
+  it("works through createAdminDb's connection, which has no prepared statements (as behind a pooler)", async () => {
+    // Regression: provisionTenant once passed a JSON helper and a Date that this kind of connection cannot serialise.
+    const viaAdminDb = createAdminDb(inject("adminUrl"), { max: 1 });
+    try {
+      const shop = await provisionTenant(viaAdminDb.sql, {
+        slug: `pooler-${suffix()}`, displayName: { en: "P", am: "ፒ" }, industry: "electronics", planKey: "pro",
+        owner: { email: `pooler-${suffix()}@example.com`, displayName: "Pooler Owner" },
+      });
+      expect(shop.ownerInvite?.token).toMatch(/^[A-Za-z0-9_-]{43}$/);
+      const [row] = await admin<{ display_name: { en: string; am: string }; invite_expires_at: Date }[]>`
+        select t.display_name, s.invite_expires_at from platform.tenants t join app.staff s on s.tenant_id = t.id where t.id = ${shop.tenantId}`;
+      expect(row?.display_name).toEqual({ en: "P", am: "ፒ" });
+      expect(row?.invite_expires_at.getTime()).toBeGreaterThan(Date.now() + 13 * 86_400_000);
+    } finally {
+      await viaAdminDb.close();
     }
   });
 
