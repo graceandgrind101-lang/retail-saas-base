@@ -20,7 +20,7 @@ This is a multi-tenant retail POS SaaS for Ethiopian shops. **Current stage: Pha
 - **Next.js:** pinned in `pnpm-workspace.yaml` (ADR-001: docs/adr/001-stack-and-versions.md). Read `apps/web/node_modules/next/dist/docs/` before writing Next code. APIs differ from training data: `proxy.ts` replaces middleware, `'use cache'`, and `revalidateTag(tag, 'max')`.
 - **Mobile-first always:** design for 360px first.
 - **Hosting:** free/cheap cloud tiers for now, no Ethiopian servers yet (D24). Keep everything portable so the later move is a config change.
-- **Languages:** English is the default; Amharic is an option. **Calendar:** Gregorian by default, Ethiopian optional (D23). No user-facing text in code: it lives in message files (`en.json` is the source, `am.json` must have every key; CI checks). Adding a `<locale>.json` adds a language.
+- **Languages:** English is the default; Amharic is an option. **Calendar:** Gregorian by default, Ethiopian optional (D23). No user-facing text in code: it lives in message files (`en.json` is the source, `am.json` must have every key; `pnpm check:i18n` in CI enforces it). Adding a `<locale>.json` adds a language.
 - **No SaaS brand name in code.** The brand is config. Neil Lewz will be tenant #1.
 - **Money and security rules live in `packages/core`** and must be unit-tested. Core is pure: no I/O, no env, no DOM or Node types; it takes inputs as arguments.
 - **Secrets:** never in code, docs, chat or git. Only `.env.example` files are tracked. The app refuses to boot on a missing or weak secret.

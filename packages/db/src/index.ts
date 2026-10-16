@@ -5,6 +5,7 @@ export * from "./audit";
 export * from "./devices";
 export * from "./errors";
 export * from "./permissions";
+export * from "./preferences";
 export * from "./rls";
 export * from "./schema";
 export * from "./sign-in";

@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  // The build/CI scripts and the tests may use Node (file system, paths).
+  "compilerOptions": { "types": ["node"] },
+  "include": ["src", "scripts", "*.config.*"],
+  "exclude": []
+}

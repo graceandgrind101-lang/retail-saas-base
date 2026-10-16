@@ -116,3 +116,11 @@ The Supabase CLI and the GitHub CLI are not installed (Docker now is). Git pushe
 - `created_at` is immutable, so ordering tests insert an old alert directly rather than editing one.
 - The lockout alert is raised where the lock is decided (inside `pin_attempt`), in the same transaction as the lock, so a lock without an alert cannot happen.
 - Query strings are parsed strictly: an unknown, repeated or malformed parameter is a 400, never silently ignored.
+
+## Findings from building A11 (languages and calendars)
+- `next-intl` 4.14.9 works with Next 16 without path-based routing: one request config reads the language from a cookie. It pulls in `@parcel/watcher` and `@swc/core`, whose install scripts are denied like the earlier ones (prebuilt binaries are used).
+- The language files are found at BUILD time and imported by a generated module, because Cloudflare Workers have no file system. The generated file is committed and CI fails if it is stale; the dev and build scripts regenerate it.
+- The ICU parser from `@formatjs` is used for the placeholder check, so a translation's message syntax is validated exactly as the app will read it.
+- The Ethiopian converter first came out one year and one day wrong: the leap day of the Ethiopian cycle falls in the third year, not the last, so the usual "four year cycle" shortcut is wrong. The year-from-day-count formula was replaced and the result is checked against `Intl` for every day of two centuries. My hand-written known dates were also wrong twice (New Year 2026 is 11 September; Adwa was 1 March), which the `Intl` cross-check exposed.
+- `core` formats whole amounts without `.00` (`12,450 ETB`, as the screen spec shows); the formatter passes the option through for places that want two decimals.
+- Language names are written in their own language in each file's `_meta`, so the picker needs no separate list.

@@ -1,4 +1,7 @@
 {
   "extends": "@retail/config/tsconfig/base.json",
-  "include": ["src", "*.config.*"]
+  // Runtime code only, with NO Node or DOM types: it also runs in the browser and on Workers.
+  // Scripts and tests are checked by tsconfig.tooling.json.
+  "include": ["src", "*.config.*"],
+  "exclude": ["src/**/*.test.ts"]
 }

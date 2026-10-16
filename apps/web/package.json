@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "pnpm --filter @retail/i18n generate && next dev",
+    "build": "pnpm --filter @retail/i18n generate && next build",
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint .",
@@ -20,7 +20,8 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "zod": "catalog:",
-    "jose": "catalog:"
+    "jose": "catalog:",
+    "next-intl": "catalog:"
   },
   "devDependencies": {
     "@retail/config": "workspace:*",

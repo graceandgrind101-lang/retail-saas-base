@@ -1,0 +1,230 @@
+{
+  "_meta": {
+    "name": "English"
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "back": "Back",
+    "retry": "Try again",
+    "search": "Search",
+    "loading": "Loading…",
+    "currency": {
+      "ETB": "ETB"
+    }
+  },
+  "language": {
+    "label": "Language"
+  },
+  "calendar": {
+    "label": "Calendar",
+    "gregorian": "Gregorian",
+    "ethiopian": "Ethiopian",
+    "ethiopian_month": {
+      "1": "Meskerem",
+      "2": "Tikimt",
+      "3": "Hidar",
+      "4": "Tahsas",
+      "5": "Tir",
+      "6": "Yekatit",
+      "7": "Megabit",
+      "8": "Miazia",
+      "9": "Ginbot",
+      "10": "Sene",
+      "11": "Hamle",
+      "12": "Nehase",
+      "13": "Pagume"
+    }
+  },
+  "errors": {
+    "unauthenticated": "Please sign in.",
+    "session_ended": "Your session ended. Please sign in again.",
+    "forbidden": "You do not have permission to do this.",
+    "bad_request": "Something in the request was not valid.",
+    "bad_origin": "This request did not come from the app.",
+    "server_error": "Something went wrong on our side. Please try again.",
+    "no_access": "You do not have access to this shop.",
+    "invite_invalid": "This invitation is not valid.",
+    "already_member": "You are already part of this shop.",
+    "wrong_pin": "Wrong PIN.",
+    "locked": "Too many wrong PINs. Try again in 15 minutes.",
+    "cannot_sign_in": "You cannot sign in here.",
+    "device_unknown": "This device is not paired. Ask a manager to pair it.",
+    "pairing_invalid": "This code is not valid or has expired.",
+    "rate_limited": "Too many tries. Please wait and try again.",
+    "pin_weak": "Choose a PIN that is not easy to guess.",
+    "approval_invalid": "This approval is not valid or has expired.",
+    "cannot_approve": "This person cannot approve this action.",
+    "last_owner": "A shop must keep at least one owner.",
+    "shop_read_only": "This shop is paused. You can look but not change anything."
+  },
+  "pin": {
+    "title": "Enter your PIN",
+    "problem": {
+      "not_digits": "Use digits only.",
+      "too_short": "Use at least 4 digits.",
+      "too_long": "Use at most 6 digits.",
+      "too_easy": "Avoid repeated or counting digits like 0000 or 1234."
+    }
+  },
+  "alerts": {
+    "title": "Alerts",
+    "open": "{count, plural, one {# open alert} other {# open alerts}}",
+    "category": {
+      "fraud": "Fraud",
+      "suspicion": "Suspicion",
+      "error": "Errors",
+      "alert": "Alerts",
+      "message": "Messages",
+      "info": "Info"
+    },
+    "status": {
+      "new": "New",
+      "ack": "Seen",
+      "resolved": "Resolved",
+      "dismissed": "Dismissed"
+    },
+    "action": {
+      "ack": "Mark as seen",
+      "resolve": "Resolve",
+      "dismiss": "Dismiss"
+    },
+    "rule": {
+      "pin": {
+        "staff_locked": "A staff member was locked out after 5 wrong PINs",
+        "device_locked": "A till was locked after 5 wrong PINs"
+      }
+    }
+  },
+  "roles": {
+    "owner": "Owner",
+    "manager": "Manager",
+    "cashier": "Cashier",
+    "stock_clerk": "Stock clerk",
+    "viewer": "Viewer"
+  },
+  "modules": {
+    "pos": "Point of sale",
+    "inventory": "Inventory",
+    "payments": "Payments",
+    "dube": "Credit (Dube)",
+    "promotions": "Promotions",
+    "reports": "Reports",
+    "serials": "Serial numbers",
+    "announcements": "Announcements",
+    "storefront": "Online storefront",
+    "manufacturing": "Manufacturing",
+    "transfers": "Stock transfers"
+  },
+  "permissions": {
+    "staff": {
+      "view": "See staff",
+      "manage": "Manage staff"
+    },
+    "role": {
+      "manage": "Manage roles"
+    },
+    "device": {
+      "manage": "Manage devices"
+    },
+    "settings": {
+      "view": "See settings",
+      "edit": "Change settings"
+    },
+    "audit": {
+      "view": "See the audit log"
+    },
+    "customer": {
+      "view": "See customers",
+      "edit": "Edit customers"
+    },
+    "product": {
+      "view": "See products",
+      "create": "Add products",
+      "edit": "Edit products",
+      "edit_price": "Change prices",
+      "archive": "Archive products"
+    },
+    "alert": {
+      "view": "See alerts",
+      "resolve": "Resolve alerts"
+    },
+    "sale": {
+      "create": "Make sales",
+      "view": "See sales",
+      "void": "Void sales",
+      "below_floor": "Sell below the floor price"
+    },
+    "discount": {
+      "create": "Give discounts"
+    },
+    "refund": {
+      "create": "Give refunds"
+    },
+    "shift": {
+      "open": "Open a shift",
+      "close": "Close a shift"
+    },
+    "cash": {
+      "adjust": "Adjust cash"
+    },
+    "stock": {
+      "view": "See stock",
+      "adjust": "Adjust stock",
+      "count": "Count stock"
+    },
+    "purchase": {
+      "create": "Create purchases",
+      "receive": "Receive purchases"
+    },
+    "supplier": {
+      "view": "See suppliers",
+      "edit": "Edit suppliers"
+    },
+    "payment": {
+      "view": "See payments",
+      "verify": "Verify payments"
+    },
+    "dube": {
+      "view": "See credit accounts",
+      "write": "Record credit",
+      "write_off": "Write off credit"
+    },
+    "promotion": {
+      "view": "See promotions",
+      "manage": "Manage promotions"
+    },
+    "report": {
+      "view": "See reports",
+      "export": "Export reports"
+    },
+    "serial": {
+      "view": "See serial numbers",
+      "edit": "Edit serial numbers"
+    },
+    "announcement": {
+      "view": "See announcements",
+      "manage": "Manage announcements"
+    },
+    "storefront": {
+      "manage": "Manage the online storefront"
+    },
+    "production": {
+      "view": "See production",
+      "manage": "Manage production"
+    },
+    "transfer": {
+      "create": "Send stock transfers",
+      "receive": "Receive stock transfers"
+    }
+  },
+  "home": {
+    "title": "Home",
+    "today": "Today is {date}",
+    "pick": "Choose your language and calendar"
+  }
+}

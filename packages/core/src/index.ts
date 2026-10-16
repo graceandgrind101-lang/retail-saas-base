@@ -4,6 +4,7 @@ export * from "./alerts";
 export * from "./auth";
 export * from "./encoding";
 export * from "./env";
+export * from "./ethiopian-calendar";
 export * from "./invite";
 export * from "./modules";
 export * from "./permissions";
