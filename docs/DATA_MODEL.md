@@ -164,6 +164,8 @@ The Supabase Data API exposes **none** of these (M3).
 
 **As built (A14).** Migrations 0013 (table) and 0014 (functions). `app.tenant_settings`: `key`, `value jsonb` (never a JSON null), `updated_by`, one row per shop and key; only choices that differ from the registry default are stored. Written only through `app.set_setting(key, value, default_state, sensitive)` (settings:edit; refuses a setting that is not editable, RT010; needs a matching PIN approval for a sensitive one, RT011); a direct write from the shop's login is refused. `app.my_setting_policies()` shows a shop which settings have a policy (its own, or the platform's). See PLAN D38.
 
+**As built (A15).** Migration 0015. `app.set_staff_status(staff_id, status)` (active / suspended / archived; `staff:manage`, not yourself, not above you, last owner protected; archived is final and an unaccepted invitation can only be cancelled) and a `BEFORE UPDATE` trigger that refuses a change of `staff.status` from the shop's own login. `app.list_activity(limit, before_seq, about)` returns the shop's audit entries newest first (needs `audit:view`) with actor and subject names resolved, leaving out session endings, used pairing codes and PIN approvals; the entries are already redacted by the audit triggers. `private.try_uuid` makes the name lookups safe on odd data.
+
 ### 3.3 `audit` schema
 
 **`audit.log`**

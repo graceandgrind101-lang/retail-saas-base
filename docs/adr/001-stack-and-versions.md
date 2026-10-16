@@ -153,3 +153,11 @@ The Supabase CLI and the GitHub CLI are not installed (Docker now is). Git pushe
 - `React.cache` lets the language setup, the layout and the page share one load of the shop's context in a request; the shop's own default language therefore costs no extra query.
 - A text lookup by words (`getByText("Asks for your PIN")`) also matches a longer sentence containing them; use `exact`.
 - Mutation testing: 54 weakenings; 49 caught first time, 3 test gaps fixed, 1 anchor typo, 2 redundant layers (the server code refuses before the database is asked) that no test through the server can observe.
+
+## Findings from building A15 (staff, devices, activity)
+- React's purity lint rejects `Date.now()` inside a server page; a tiny helper (`lib/now.ts`) keeps pages pure and the intent readable.
+- Dates in client screens need the person's calendar and the shop's time zone, neither of which the browser knows; a `FormatProvider` in the admin layout hands them down, so no screen reads the calendar from a cookie.
+- The Activity sentence is chosen in core from table, event and which columns changed; anything unrecognised becomes "Something changed". Plumbing rows (a session ending, a lock being set) are hidden rather than described.
+- A pairing code is letters and digits, so a test must not assume a digit is present (it passed by luck once).
+- A database test searched the whole alert JSON for the digits of a PIN and failed once in a while on random ids and timestamps; ids and timestamps are now removed before the search.
+- Mutation testing: 4 weakenings of the new database rules (manage check, archived-is-final, audit permission, status trigger), all caught.

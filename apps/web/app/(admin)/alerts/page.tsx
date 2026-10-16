@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { listAlerts } from "@retail/db";
 import { AlertsView } from "./alerts-view";
 import { tenantDb } from "@/lib/db";
@@ -13,12 +13,9 @@ export default async function AlertsPage({ searchParams }: { searchParams: Promi
   const rows = await tenantDb().rls(ctx.session, (tx) =>
     listAlerts(tx, { statuses: showClosed ? ["new", "ack", "resolved", "dismissed"] : ["new", "ack"], limit: 100 }),
   );
-  const locale = await getLocale();
   const t = await getTranslations("alerts");
   return (
     <AlertsView
-      locale={locale}
-      timeZone={ctx.tenant.timezone}
       counts={ctx.openAlerts}
       canResolve={ctx.permissions.includes("alert:resolve")}
       showClosed={showClosed}

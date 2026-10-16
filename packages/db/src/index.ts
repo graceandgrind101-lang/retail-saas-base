@@ -3,6 +3,7 @@
 export * from "./alerts";
 export * from "./audit";
 export * from "./devices";
+export * from "./directory";
 export * from "./errors";
 export * from "./permissions";
 export * from "./preferences";

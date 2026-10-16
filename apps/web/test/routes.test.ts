@@ -155,6 +155,7 @@ describe("route files export only what Next allows", () => {
       "staff/pin/route.ts",
       "staff/role/route.ts",
       "staff/route.ts",
+      "staff/status/route.ts",
       "step-up/route.ts",
     ]);
   });

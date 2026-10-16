@@ -150,6 +150,43 @@ describe("adding people and changing roles over HTTP", () => {
   });
 });
 
+describe("suspending and archiving people over HTTP", () => {
+  it("a manager suspends and reinstates a cashier; a cashier, themselves, an owner and an archived person are refused", async () => {
+    const s = await shop("status");
+    const manager = await person(s, "manager");
+    const cashier = await person(s, "cashier");
+    const other = await person(s, "viewer");
+    const status = (cookie: string | undefined, staffId: string, value: string, extra: Options = {}) => post(handlers.setStaffStatus, "/api/staff/status", cookie, { staffId, status: value }, extra);
+    const read = async (id: string) => ((await admin.sql`select status from app.staff where id = ${id}`)[0] as { status: string }).status;
+
+    expect((await status(manager.cookie, other.staffId, "suspended")).status).toBe(200);
+    expect(await read(other.staffId)).toBe("suspended");
+    expect((await status(manager.cookie, other.staffId, "active")).status).toBe(200);
+    expect(await read(other.staffId)).toBe("active");
+
+    expect((await status(cashier.cookie, other.staffId, "suspended")).status).toBe(403); // no staff:manage
+    expect((await status(manager.cookie, manager.staffId, "suspended")).status).toBe(403); // not yourself
+    expect((await status(manager.cookie, s.ownerId, "suspended")).status).toBe(403); // not above you
+    expect(await read(s.ownerId)).toBe("active");
+
+    expect((await status(manager.cookie, other.staffId, "archived")).status).toBe(200);
+    expect((await status(manager.cookie, other.staffId, "active")).status).toBe(400); // archived is final here
+    expect(await read(other.staffId)).toBe("archived");
+  });
+
+  it("the shape is checked: status values, ids, extra fields, origin, session", async () => {
+    const s = await shop("statusshape");
+    const cashier = await person(s, "cashier");
+    const go = (body: unknown, extra: Options = {}) => post(handlers.setStaffStatus, "/api/staff/status", s.ownerCookie, body, extra);
+    expect((await go({ staffId: cashier.staffId, status: "deleted" })).status).toBe(400);
+    expect((await go({ staffId: cashier.staffId, status: "invited" })).status).toBe(400);
+    expect((await go({ staffId: "nope", status: "suspended" })).status).toBe(400);
+    expect((await go({ staffId: cashier.staffId, status: "suspended", extra: 1 })).status).toBe(400);
+    expect((await go({ staffId: cashier.staffId, status: "suspended" }, { origin: "http://evil.example" })).status).toBe(403);
+    expect((await post(handlers.setStaffStatus, "/api/staff/status", undefined, { staffId: cashier.staffId, status: "suspended" })).status).toBe(401);
+  });
+});
+
 describe("personal exceptions and custom roles over HTTP", () => {
   it("an owner allows and denies keys with a reason; the person's /me changes at once", async () => {
     const s = await shop("override");

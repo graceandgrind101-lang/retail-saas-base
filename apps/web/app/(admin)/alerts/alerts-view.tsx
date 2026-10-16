@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useMessages, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { ALERT_CATEGORIES, isAlertOpen, type AlertCategory, type AlertStatus } from "@retail/core";
-import { formatDateTime, resolveCalendar, type CalendarKind, type Messages } from "@retail/i18n";
 import { Button, CategoryBadge, Sheet, Tile, useToast } from "@retail/ui";
+import { useFormat } from "@/components/format-context";
 import { postJson } from "@/lib/client/api";
 
 export interface AlertRowData {
@@ -21,30 +21,21 @@ export interface AlertRowData {
 
 const TONES = ["a", "b", "c", "d", "a", "b"] as const;
 
-function calendarFromDocument(): CalendarKind {
-  const match = /(?:^|; )retail_cal=([^;]*)/.exec(typeof document === "undefined" ? "" : document.cookie);
-  return resolveCalendar({ user: match?.[1] ? decodeURIComponent(match[1]) : null });
-}
-
 export function AlertsView({
   alerts,
   counts,
   canResolve,
   showClosed,
-  locale,
-  timeZone,
   title,
 }: {
   alerts: AlertRowData[];
   counts: Record<AlertCategory, number>;
   canResolve: boolean;
   showClosed: boolean;
-  locale: string;
-  timeZone: string;
   title: string;
 }) {
   const t = useTranslations();
-  const messages = useMessages() as unknown as Messages;
+  const format = useFormat();
   const toast = useToast();
   const router = useRouter();
   const [selected, setSelected] = useState<AlertRowData | null>(null);
@@ -52,7 +43,7 @@ export function AlertsView({
   const [busy, setBusy] = useState(false);
 
   const ruleText = (ruleKey: string) => (t.has(`alerts.rule.${ruleKey}`) ? t(`alerts.rule.${ruleKey}`) : ruleKey);
-  const when = (iso: string) => formatDateTime(new Date(iso), { locale, calendar: calendarFromDocument(), timeZone, messages });
+  const when = (iso: string) => format.dateTime(iso);
   const errorText = (code: string | undefined) => (code && t.has(`errors.${code}`) ? t(`errors.${code}`) : t("errors.server_error"));
 
   async function change(alert: AlertRowData, status: "ack" | "resolved" | "dismissed") {

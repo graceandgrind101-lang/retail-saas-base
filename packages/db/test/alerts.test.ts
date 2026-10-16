@@ -92,7 +92,9 @@ describe("a PIN lockout is an alert", () => {
     expect(person).toMatchObject({ category: "suspicion", severity: 3, status: "new", entityType: "staff", entityId: cashier.staffId, branchId: shop.branchId });
     expect(till).toMatchObject({ category: "suspicion", severity: 4, status: "new", entityType: "device", entityId: device.deviceId, branchId: shop.branchId });
     expect(person?.payload).toMatchObject({ staff_id: cashier.staffId, device_id: device.deviceId });
-    expect(JSON.stringify(alerts)).not.toMatch(/pbkdf2|0000|4829|hash/i);
+    // random ids and timestamps can contain any digits, so take them out before looking for the PIN
+    const readable = JSON.stringify(alerts).replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, "").replace(/\d{4}-\d\d-\d\dT[\d:.]+Z/g, "");
+    expect(readable).not.toMatch(/pbkdf2|0000|4829|hash/i);
 
     // more attempts while locked do not pile up alerts
     for (let i = 0; i < 3; i++) await wrongPin(device.deviceToken, cashier.staffId);

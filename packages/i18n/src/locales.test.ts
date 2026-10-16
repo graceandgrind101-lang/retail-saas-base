@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SETTING_GROUPS, SETTING_KEYS, settingHelpPath, settingLabelPath, ADMIN_NAV, ALERT_CATEGORIES, ALERT_RULES, ALERT_STATUSES, MODULE_KEYS, PERMISSION_KEYS, POS_TABS, SYSTEM_ROLE_KEYS } from "@retail/core";
+import { ACTIVITY_KINDS, SETTING_GROUPS, SETTING_KEYS, settingHelpPath, settingLabelPath, ADMIN_NAV, ALERT_CATEGORIES, ALERT_RULES, ALERT_STATUSES, MODULE_KEYS, PERMISSION_KEYS, POS_TABS, SYSTEM_ROLE_KEYS } from "@retail/core";
 import { checkLocales } from "./check";
 import {
   ALL_LOCALES,
@@ -65,6 +65,12 @@ describe("every name the system defines has text in every language", () => {
       expect(has(settingHelpPath(key)), `${key} help`).toEqual([]);
     }
     for (const group of SETTING_GROUPS) expect(has(`settings.groups.${group}`), group).toEqual([]);
+  });
+  it("every kind of activity, sign-in method, staff status and device kind", () => {
+    for (const kind of ACTIVITY_KINDS) expect(has(`activity.event.${kind}`), kind).toEqual([]);
+    for (const method of ["pin", "password", "google", "telegram"]) expect(has(`activity.method.${method}`), method).toEqual([]);
+    for (const status of ["invited", "active", "suspended", "archived"]) expect(has(`staff.status.${status}`), status).toEqual([]);
+    for (const kind of ["pos", "phone", "tablet", "desktop"]) expect(has(`signIn.kinds.${kind}`), kind).toEqual([]);
   });
   it("has no text for a key that is not defined (guards the test itself)", () => {
     expect(has("permissions.nope.nope")).toEqual(["am", "en"]);

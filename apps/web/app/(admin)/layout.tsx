@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { buildAdminNav } from "@retail/core";
+import { FormatProvider } from "@/components/format-context";
 import { AdminShell } from "@/components/shell/admin-shell";
 import { loadShellContext } from "@/lib/shell/context";
 import { shellProps } from "@/lib/shell/props";
@@ -12,7 +13,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const props = await shellProps(ctx);
   return (
     <AdminShell nav={nav} {...props}>
-      {children}
+      <FormatProvider calendar={props.calendar} timeZone={ctx.tenant.timezone}>
+        {children}
+      </FormatProvider>
     </AdminShell>
   );
 }

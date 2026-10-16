@@ -43,8 +43,9 @@ export const ADMIN_NAV: readonly NavItem[] = [
   { key: "customers", module: "core", path: "/customers", permission: "customer:view", built: false },
   { key: "reports", module: "reports", path: "/reports", permission: "report:view", built: false },
 
-  { key: "staff", module: "core", path: "/staff", permission: "staff:view", configuration: true, built: false },
-  { key: "devices", module: "core", path: "/devices", permission: "device:manage", configuration: true, built: false },
+  { key: "staff", module: "core", path: "/staff", permission: "staff:view", configuration: true, built: true },
+  { key: "devices", module: "core", path: "/devices", permission: "device:manage", configuration: true, built: true },
+  { key: "activity", module: "core", path: "/activity", permission: "audit:view", configuration: true, built: true },
   { key: "settings", module: "core", path: "/settings", permission: "settings:view", configuration: true, built: true },
 ];
 

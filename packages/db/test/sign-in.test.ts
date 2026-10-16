@@ -593,7 +593,7 @@ describe("ending a session", () => {
     await expect(read(cashierCtx)).resolves.toBeDefined();
 
     // the OWNER, through the normal app path, suspends the cashier
-    await db.rls(ctx, (tx) => tx.execute(sql`update app.staff set status = 'suspended' where id = ${staffId}`), { write: true });
+    await db.rls(ctx, (tx) => tx.execute(sql`select app.set_staff_status(${staffId}::uuid, 'suspended')`), { write: true });
     await expect(read(cashierCtx)).rejects.toThrow(SessionEndedError);
     await expect(read(ctx)).resolves.toBeDefined(); // the owner is unaffected
 

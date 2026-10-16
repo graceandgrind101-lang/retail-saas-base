@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { isPermissionKey, isUuid, uuidv7 } from "@retail/core";
-import { createStaff, removeOverride, setOverride, setRolePermission, setStaffRole, type TenantDb } from "@retail/db";
+import { createStaff, removeOverride, setOverride, setRolePermission, setStaffRole, setStaffStatus, type TenantDb } from "@retail/db";
 import { clearedSessionCookieHeader } from "../auth/cookie";
 import { HttpError, apiErrorResponse, jsonResponse, readJsonBody, readSessionContext, requireSameOrigin } from "../http";
 
@@ -29,6 +29,7 @@ const createBody = z
   })
   .strict();
 const roleBody = z.object({ staffId: uuid, roleId: uuid }).strict();
+const statusBody = z.object({ staffId: uuid, status: z.enum(["active", "suspended", "archived"]) }).strict();
 const overrideBody = z.object({ staffId: uuid, key, effect: z.enum(["allow", "deny"]), reason: z.string().trim().min(1).max(300) }).strict();
 const removeBody = z.object({ staffId: uuid, key }).strict();
 const rolePermissionBody = z.object({ roleId: uuid, key, granted: z.boolean() }).strict();
@@ -68,6 +69,16 @@ export function createPermissionHandlers(deps: PermissionDeps) {
         const context = await requireSession(request);
         const body = await readJsonBody(request, roleBody);
         await deps.db.rls(context, (tx) => setStaffRole(tx, body.staffId, body.roleId), { write: true });
+        return jsonResponse(200, { changed: true });
+      }),
+
+    /** POST { staffId, status }: suspend, reinstate or archive a person. */
+    setStaffStatus: (request: Request) =>
+      guard(async () => {
+        requireSameOrigin(request, deps.appUrl);
+        const context = await requireSession(request);
+        const body = await readJsonBody(request, statusBody);
+        await deps.db.rls(context, (tx) => setStaffStatus(tx, body.staffId, body.status), { write: true });
         return jsonResponse(200, { changed: true });
       }),
 
