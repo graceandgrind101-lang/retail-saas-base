@@ -17,7 +17,7 @@ import type { LeakFixture } from "./leak-suite";
  * Tables the shop's own login may not write directly: they change only through the functions that
  * enforce who may grant what (migration 0010). The suite checks a direct insert is refused.
  */
-export const FUNCTIONS_ONLY_TABLES: ReadonlySet<string> = new Set(["roles", "role_permissions", "staff", "staff_permission_overrides", "alerts"]);
+export const FUNCTIONS_ONLY_TABLES: ReadonlySet<string> = new Set(["roles", "role_permissions", "staff", "staff_permission_overrides", "alerts", "tenant_settings"]);
 
 export const leakFixtures: Record<string, LeakFixture> = {
   branches: (tenantId) =>
@@ -53,4 +53,7 @@ export const leakFixtures: Record<string, LeakFixture> = {
 
   alerts: (tenantId) =>
     sql`insert into app.alerts (id, tenant_id, category, rule_key, severity) values (${newId()}, ${tenantId}, 'info', 'test.note', 1)`,
+
+  tenant_settings: (tenantId) =>
+    sql`insert into app.tenant_settings (id, tenant_id, key, value) values (${newId()}, ${tenantId}, ${randomLetters() + ".note"}, '"x"'::jsonb)`,
 };

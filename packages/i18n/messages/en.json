@@ -63,7 +63,10 @@
     "shop_read_only": "This shop is paused. You can look but not change anything.",
     "not_found": "This is not available.",
     "no_demo_shop": "There is no demo shop yet. Run: pnpm dev:seed",
-    "network": "No connection. Check the network and try again."
+    "network": "No connection. Check the network and try again.",
+    "setting_locked": "This setting is locked. Contact support to change it.",
+    "pin_required": "This change needs your PIN.",
+    "invalid_value": "That value is not valid."
   },
   "pin": {
     "title": "Enter your PIN",
@@ -324,5 +327,101 @@
     "alertsTitle": "Open alerts",
     "nothingOpen": "Nothing needs your attention.",
     "seeAlerts": "See alerts"
+  },
+  "settings": {
+    "groups": {
+      "business": "Business profile",
+      "receipt": "Receipt",
+      "inventory": "Inventory",
+      "locale": "Language and calendar",
+      "payments": "Payment accounts",
+      "pricing": "Pricing rules",
+      "security": "Security"
+    },
+    "business": {
+      "phone": {
+        "label": "Shop phone number",
+        "help": "Shown on receipts. Changing it asks for your PIN."
+      },
+      "address": {
+        "label": "Address",
+        "help": "Shown on receipts."
+      },
+      "opening_hours": {
+        "label": "Opening hours",
+        "help": "For example: Monday to Saturday, 8 to 6."
+      }
+    },
+    "receipt": {
+      "footer": {
+        "label": "Receipt footer",
+        "help": "A short line at the bottom, such as a thank-you."
+      },
+      "show_cashier": {
+        "label": "Show the cashier's name on receipts",
+        "help": "Turn off if you prefer receipts without a name."
+      },
+      "not_fiscal_label": {
+        "label": "Print “not a fiscal receipt”",
+        "help": "Required until the shop is connected to the tax authority's system. Changed by our team only."
+      }
+    },
+    "inventory": {
+      "low_stock_threshold": {
+        "label": "Low-stock level",
+        "help": "Warn when an item has this many or fewer left."
+      },
+      "expiry_warning_days": {
+        "label": "Expiry warning (days)",
+        "help": "Warn this many days before an item expires."
+      }
+    },
+    "locale": {
+      "default_language": {
+        "label": "Default language",
+        "help": "What people see until they choose their own."
+      },
+      "default_calendar": {
+        "label": "Default calendar",
+        "help": "What people see until they choose their own."
+      }
+    },
+    "payments": {
+      "telebirr_number": {
+        "label": "Telebirr number",
+        "help": "Changes need our approval, to protect you from a swapped payment number."
+      },
+      "cbe_account": {
+        "label": "CBE account",
+        "help": "Changes need our approval, to protect you from a swapped payment account."
+      }
+    },
+    "pricing": {
+      "max_discount_percent": {
+        "label": "Largest discount (%)",
+        "help": "The most a discount may take off a price."
+      }
+    },
+    "security": {
+      "pos_idle_lock_seconds": {
+        "label": "Till locks after (seconds)",
+        "help": "How long a till may sit untouched before it locks itself. 0 turns it off."
+      }
+    }
+  },
+  "settingsScreen": {
+    "title": "Settings",
+    "search": "Search settings",
+    "searchPlaceholder": "Find a setting…",
+    "noMatch": "No settings match.",
+    "locked": "Locked",
+    "contactSupport": "Contact support to change this.",
+    "save": "Save",
+    "saved": "Saved",
+    "needsPin": "Asks for your PIN",
+    "pinTitle": "Your PIN",
+    "pinWhy": "Enter your PIN to save this change.",
+    "default": "Default",
+    "noChanges": "Nothing to save."
   }
 }

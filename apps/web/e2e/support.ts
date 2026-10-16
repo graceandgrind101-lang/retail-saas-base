@@ -41,10 +41,10 @@ export async function typePin(page: Page, pin: string): Promise<void> {
 }
 
 /** Connect a new device to the shop, pick the person and sign in with their PIN. Lands on the till or the admin home. */
-export async function signInWithPin(page: Page, shop: TestShop, who: "Demo Manager" | "Demo Cashier"): Promise<void> {
+export async function signInWithPin(page: Page, shop: TestShop, who: "Demo Owner" | "Demo Manager" | "Demo Cashier"): Promise<void> {
   await ownAddress(page);
   await pair(page, shop.pairingCode);
   await page.getByRole("button", { name: who }).click();
-  await typePin(page, who === "Demo Manager" ? shop.pins.manager : shop.pins.cashier);
+  await typePin(page, who === "Demo Owner" ? shop.pins.owner : who === "Demo Manager" ? shop.pins.manager : shop.pins.cashier);
   await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"));
 }

@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import { parseCookieHeader, readSessionCookie } from "@retail/core";
-import { LastOwnerError, PermissionDeniedError, PinTooWeakError, SessionEndedError, StepUpInvalidError, isShopReadOnlyError, pgErrorCode, type RlsContext } from "@retail/db";
+import { InvalidSettingError, LastOwnerError, PermissionDeniedError, PinApprovalRequiredError, PinTooWeakError, SessionEndedError, SettingLockedError, StepUpInvalidError, isShopReadOnlyError, pgErrorCode, type RlsContext } from "@retail/db";
 import { sessionCookieName } from "./auth/cookie";
 
 /**
@@ -76,6 +76,9 @@ export function apiErrorResponse(error: unknown, label: string, clearSession: Re
   if (error instanceof StepUpInvalidError) return jsonResponse(403, { error: "approval_invalid" });
   if (error instanceof PinTooWeakError) return jsonResponse(400, { error: "pin_weak", problem: error.problem });
   if (error instanceof PermissionDeniedError) return jsonResponse(403, { error: "forbidden" });
+  if (error instanceof SettingLockedError) return jsonResponse(403, { error: "setting_locked" });
+  if (error instanceof PinApprovalRequiredError) return jsonResponse(403, { error: "pin_required" });
+  if (error instanceof InvalidSettingError) return jsonResponse(400, { error: "invalid_value" });
   if (error instanceof LastOwnerError) return jsonResponse(409, { error: "last_owner" });
   if (isShopReadOnlyError(error)) return jsonResponse(409, { error: "shop_read_only" });
   switch (pgErrorCode(error)) {

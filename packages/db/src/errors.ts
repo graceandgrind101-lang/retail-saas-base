@@ -58,6 +58,22 @@ export class LastOwnerError extends Error {
   }
 }
 
+/** The setting is locked or hidden for this shop (by the launch rules or by a policy). SQLSTATE RT010. */
+export class SettingLockedError extends Error {
+  constructor() {
+    super("This setting cannot be changed here.");
+    this.name = "SettingLockedError";
+  }
+}
+
+/** Saving this setting needs the person's PIN approval first. SQLSTATE RT011. */
+export class PinApprovalRequiredError extends Error {
+  constructor() {
+    super("This change needs your PIN.");
+    this.name = "PinApprovalRequiredError";
+  }
+}
+
 export const isSessionEndedError = (error: unknown): boolean => error instanceof SessionEndedError || pgErrorCode(error) === "28000";
 
 /** Turn a raw database error into the matching application error; anything else is returned unchanged. */
@@ -75,6 +91,10 @@ export function translateAuthError(error: unknown): unknown {
       return new StepUpInvalidError();
     case "RT008":
       return new LastOwnerError();
+    case "RT010":
+      return new SettingLockedError();
+    case "RT011":
+      return new PinApprovalRequiredError();
     default:
       return error;
   }

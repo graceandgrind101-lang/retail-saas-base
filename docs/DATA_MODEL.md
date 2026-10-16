@@ -162,6 +162,8 @@ The Supabase Data API exposes **none** of these (M3).
 
 **As built (A10).** Migrations 0011 (the table) and 0012 (functions). `app.alerts` as above with checks on category, status, severity, rule-key shape, payload being an object, entity type and id travelling together, and "closed means closed by someone at a time". `private.raise_alert` (system), `app.raise_alert` (the signed-in request), `app.set_alert_status` (needs `alert:resolve`), `private.alert_transition_ok` (kept identical to core's `canTransitionAlert` by a test). `private.pin_attempt` now raises the lockout alerts. Direct writes by the shop's own login are refused. See PLAN D34.
 
+**As built (A14).** Migrations 0013 (table) and 0014 (functions). `app.tenant_settings`: `key`, `value jsonb` (never a JSON null), `updated_by`, one row per shop and key; only choices that differ from the registry default are stored. Written only through `app.set_setting(key, value, default_state, sensitive)` (settings:edit; refuses a setting that is not editable, RT010; needs a matching PIN approval for a sensitive one, RT011); a direct write from the shop's login is refused. `app.my_setting_policies()` shows a shop which settings have a policy (its own, or the platform's). See PLAN D38.
+
 ### 3.3 `audit` schema
 
 **`audit.log`**

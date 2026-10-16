@@ -1,5 +1,6 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
-import { readSessionCookie, type AlertCategory } from "@retail/core";
+import { readSessionCookie, settingValue, type AlertCategory, type SettingView } from "@retail/core";
 import {
   SessionEndedError,
   countOpenAlerts,
@@ -8,6 +9,7 @@ import {
   getMyPermissions,
   getMyStaff,
   getMyTenant,
+  getSettings,
   type MyStaff,
   type MyTenant,
   type RlsContext,
@@ -32,9 +34,24 @@ export interface ShellContext {
   device: { id: string; name: string } | null;
   /** Open alerts per category; null when the person may not see alerts. */
   openAlerts: Record<AlertCategory, number> | null;
+  /** The shop's settings (values, states). Loaded with everything else, so a changed setting shows on the next page. */
+  settings: SettingView[];
 }
 
-export async function loadShellContext(): Promise<ShellContext | null> {
+/** The shop's own defaults for language and calendar (settings), as the resolution of what to show wants them. */
+export function savedChoices(ctx: ShellContext | null) {
+  if (!ctx) return {};
+  const text = (value: unknown) => (typeof value === "string" ? value : null);
+  return {
+    staffLanguage: ctx.staff.language,
+    staffCalendar: ctx.staff.calendar,
+    shopLanguage: text(settingValue(ctx.settings, "locale.default_language")),
+    shopCalendar: text(settingValue(ctx.settings, "locale.default_calendar")),
+  };
+}
+
+// `cache` makes one load serve the whole request: the language setup, the layout and the page share it.
+export const loadShellContext = cache(async (): Promise<ShellContext | null> => {
   const env = serverEnv();
   const value = (await cookies()).get(sessionCookieName(env.NEXT_PUBLIC_APP_URL))?.value;
   if (!value) return null;
@@ -48,7 +65,7 @@ export async function loadShellContext(): Promise<ShellContext | null> {
   };
   try {
     return await tenantDb().rls(session, async (tx) => {
-      const [staff, tenant, modules, permissions, device] = [await getMyStaff(tx), await getMyTenant(tx), await getEnabledModules(tx), await getMyPermissions(tx), await getMyDevice(tx)];
+      const [staff, tenant, modules, permissions, device, settings] = [await getMyStaff(tx), await getMyTenant(tx), await getEnabledModules(tx), await getMyPermissions(tx), await getMyDevice(tx), await getSettings(tx)];
       if (!staff || !tenant) return null;
       return {
         session,
@@ -58,10 +75,11 @@ export async function loadShellContext(): Promise<ShellContext | null> {
         permissions: [...permissions].sort(),
         device,
         openAlerts: permissions.has("alert:view") ? await countOpenAlerts(tx) : null,
+        settings,
       };
     });
   } catch (error) {
     if (error instanceof SessionEndedError) return null;
     throw error;
   }
-}
+});

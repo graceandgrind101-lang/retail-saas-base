@@ -54,6 +54,28 @@ describe("which language and calendar a request gets", () => {
   });
 });
 
+describe("language and calendar: the browser, then the person's saved choice, then the shop's default", () => {
+  const from = (jar: Record<string, string>, saved: Parameters<typeof preferencesFromCookies>[1]) => preferencesFromCookies((name) => jar[name], saved);
+
+  it("the shop's default applies when nothing else is chosen", () => {
+    expect(from({}, { shopLanguage: "am", shopCalendar: "ethiopian" })).toEqual({ locale: "am", calendar: "ethiopian" });
+  });
+  it("the person's saved choice beats the shop's default", () => {
+    expect(from({}, { staffLanguage: "en", shopLanguage: "am", staffCalendar: "gregorian", shopCalendar: "ethiopian" })).toEqual({ locale: "en", calendar: "gregorian" });
+  });
+  it("this browser's cookie beats both", () => {
+    expect(from({ retail_lang: "en", retail_cal: "gregorian" }, { staffLanguage: "am", shopLanguage: "am", staffCalendar: "ethiopian", shopCalendar: "ethiopian" })).toEqual({ locale: "en", calendar: "gregorian" });
+  });
+  it("a cookie that is not offered does not hide a valid saved choice", () => {
+    expect(from({ retail_lang: "fr", retail_cal: "lunar" }, { staffLanguage: "am", staffCalendar: "ethiopian" })).toEqual({ locale: "am", calendar: "ethiopian" });
+  });
+  it("saved values that are not offered are skipped down the list, ending at English and Gregorian", () => {
+    expect(from({}, { staffLanguage: "fr", shopLanguage: "xx", staffCalendar: "lunar", shopCalendar: "julian" })).toEqual({ locale: "en", calendar: "gregorian" });
+    expect(from({}, { staffLanguage: null, shopLanguage: null, staffCalendar: null, shopCalendar: null })).toEqual({ locale: "en", calendar: "gregorian" });
+    expect(from({}, { staffLanguage: "fr", shopLanguage: "am" })).toEqual({ locale: "am", calendar: "gregorian" });
+  });
+});
+
 describe("the preference cookies", () => {
   it("are plain, scoped to the whole app, a year long, and Secure over https", () => {
     expect(languageCookieHeader("http://localhost:3000", "am")).toBe("retail_lang=am; Path=/; SameSite=Lax; Max-Age=31536000");

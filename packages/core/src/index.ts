@@ -16,6 +16,7 @@ export * from "./qty";
 export * from "./roles";
 export * from "./rounding";
 export * from "./session-cookie";
+export * from "./settings";
 export * from "./tax";
 export * from "./types";
 export * from "./uuid";

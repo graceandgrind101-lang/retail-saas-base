@@ -6,5 +6,6 @@ export * from "./permissions";
 export * from "./platform";
 export * from "./roles";
 export * from "./sessions";
+export * from "./settings";
 export * from "./staff";
 export * from "./tenant-table";

@@ -25,16 +25,17 @@ describe("the menu definition", () => {
     expect(ADMIN_NAV.find((i) => i.key === "home")?.permission).toBeUndefined();
   });
 
-  it("only Home and Alerts exist so far", () => {
-    expect(keys(ADMIN_NAV.filter((i) => i.built))).toEqual(["home", "alerts"]);
+  it("only Home, Alerts and Settings exist so far", () => {
+    expect(keys(ADMIN_NAV.filter((i) => i.built))).toEqual(["home", "alerts", "settings"]);
   });
 });
 
 describe("what a person sees", () => {
   it("planned screens stay out of the menu until they are built", () => {
     const nav = buildAdminNav({ enabledModules: MODULE_KEYS, permissions: ALL });
-    expect(keys(flattenNav(nav))).toEqual(["home", "alerts"]);
+    expect(keys(flattenNav(nav))).toEqual(["home", "alerts", "settings"]);
     expect(nav.modules).toEqual([]);
+    expect(keys(nav.configuration)).toEqual(["settings"]);
   });
 
   it("a module the shop has not switched on is hidden, with all its items", () => {
@@ -96,9 +97,10 @@ describe("the phone's bottom tabs", () => {
     expect(more).toEqual([]);
   });
 
-  it("today, with only the built screens, is Home and Alerts", () => {
-    const { tabs } = phoneTabs(buildAdminNav({ enabledModules: MODULE_KEYS, permissions: ALL }));
+  it("today, with only the built screens, is Home and Alerts, with Settings under More", () => {
+    const { tabs, more } = phoneTabs(buildAdminNav({ enabledModules: MODULE_KEYS, permissions: ALL }));
     expect(keys(tabs)).toEqual(["home", "alerts"]);
+    expect(keys(more)).toEqual(["settings"]);
   });
 });
 

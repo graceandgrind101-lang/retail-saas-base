@@ -46,13 +46,24 @@ describe("the demo shop for local development", () => {
     const info = await db.device((tx) => getDeviceInfo(tx, { deviceToken: paired.deviceToken, devicePepper: PEPPERS.devicePepper }));
     expect(info?.tenantSlug).toBe(DEMO_SLUG);
     const people = await db.device((tx) => listDeviceStaff(tx, { deviceToken: paired.deviceToken, devicePepper: PEPPERS.devicePepper }));
-    expect(people.map((p) => p.displayName)).toEqual(["Demo Cashier", "Demo Manager"]); // the owner has no PIN
+    expect(people.map((p) => p.displayName)).toEqual(["Demo Cashier", "Demo Manager", "Demo Owner"]);
 
-    for (const [name, pin] of [["Demo Manager", DEMO_PINS.manager], ["Demo Cashier", DEMO_PINS.cashier]] as const) {
+    for (const [name, pin] of [["Demo Owner", DEMO_PINS.owner], ["Demo Manager", DEMO_PINS.manager], ["Demo Cashier", DEMO_PINS.cashier]] as const) {
       const person = people.find((p) => p.displayName === name);
       const result = await db.device((tx) => pinSignIn(tx, { deviceToken: paired.deviceToken, staffId: person?.staffId as string, pin, peppers: PEPPERS }));
       expect(result.ok, name).toBe(true);
     }
+  });
+
+  it("gives an older demo shop's owner the demo PIN when seeded again, and leaves a PIN that is already there alone", async () => {
+    const seed = await seedDemoShop(admin, PEPPERS);
+    await admin`update app.staff set pin_hash = null, pin_set_at = null where tenant_id = ${seed.tenantId} and auth_user_id = ${DEV_DEMO_OWNER_ACCOUNT_ID}`;
+    await seedDemoShop(admin, PEPPERS);
+    const [after] = await admin`select pin_hash from app.staff where tenant_id = ${seed.tenantId} and auth_user_id = ${DEV_DEMO_OWNER_ACCOUNT_ID}`;
+    expect(after?.pin_hash).toMatch(/^pbkdf2-sha256\$/);
+    await seedDemoShop(admin, PEPPERS);
+    const [again] = await admin`select pin_hash from app.staff where tenant_id = ${seed.tenantId} and auth_user_id = ${DEV_DEMO_OWNER_ACCOUNT_ID}`;
+    expect(again?.pin_hash).toBe(after?.pin_hash); // not re-hashed
   });
 
   it("has two sample alerts for the alerts screen, and no more after a second run", async () => {

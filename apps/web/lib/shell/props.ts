@@ -2,13 +2,13 @@ import { cookies } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
 import { pickText } from "@retail/i18n";
 import { preferencesFromCookies } from "../preferences/resolve";
-import type { ShellContext } from "./context";
+import { savedChoices, type ShellContext } from "./context";
 
 /** What both shells need that is not the menu: names in the person's language, alerts, display choices. */
 export async function shellProps(ctx: ShellContext) {
   const locale = await getLocale();
   const store = await cookies();
-  const { calendar } = preferencesFromCookies((name) => store.get(name)?.value);
+  const { calendar } = preferencesFromCookies((name) => store.get(name)?.value, savedChoices(ctx));
   const t = await getTranslations("roles");
   const open = ctx.openAlerts ? Object.values(ctx.openAlerts).reduce((sum, n) => sum + n, 0) : null;
   return {

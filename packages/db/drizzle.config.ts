@@ -20,6 +20,7 @@ export default defineConfig({
     "./src/schema/sessions.ts",
     "./src/schema/permissions.ts",
     "./src/schema/alerts.ts",
+    "./src/schema/settings.ts",
   ],
   out: "./migrations",
   schemaFilter: ["platform", "app"],

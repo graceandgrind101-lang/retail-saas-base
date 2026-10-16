@@ -92,6 +92,20 @@
       "when": 1792163020430,
       "tag": "0012_alert_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792178101610,
+      "tag": "0013_tenant_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792178103847,
+      "tag": "0014_setting_functions",
+      "breakpoints": true
     }
   ]
 }

@@ -144,3 +144,12 @@ The Supabase CLI and the GitHub CLI are not installed (Docker now is). Git pushe
 - Root-layout translated error codes are checked by scanning the API sources: a new error code with no message fails a test, which found four.
 - The shop's own language for its name (`pickText`) falls back to English, then to anything, then to empty; it never throws.
 - A mutation battery found two test gaps: a "does not exist" test that passed by coincidence because a missing demo shop is also a 404 (the shop now exists for every test), and an idle timer test that never woke the page after it had locked.
+
+## Findings from building A14 (settings)
+- Order of checks when saving matters for people: locked and hidden are checked BEFORE a PIN is asked for or an approval is used up. The first version asked for the PIN first on a locked, sensitive setting; a test caught it.
+- The database function cannot know the registry (it lives in code), so the server hands it the launch state and the sensitive flag, the same trust the other functions give the server. The function still enforces the policy tables itself, and that is tested by calling it directly, because the server checks the same things first and would otherwise hide a broken database rule.
+- A "does the approval belong to this person" rule is enforced twice (when spent, and again in the function). The second check is only reachable by slipping an approval into the request by hand, so its test does exactly that.
+- `next start` loads `apps/web/.env.local`. Once the developer sign-in was on in that file, the browser tests' production server refused to start (correctly); the test server now pins the setting off.
+- `React.cache` lets the language setup, the layout and the page share one load of the shop's context in a request; the shop's own default language therefore costs no extra query.
+- A text lookup by words (`getByText("Asks for your PIN")`) also matches a longer sentence containing them; use `exact`.
+- Mutation testing: 54 weakenings; 49 caught first time, 3 test gaps fixed, 1 anchor typo, 2 redundant layers (the server code refuses before the database is asked) that no test through the server can observe.

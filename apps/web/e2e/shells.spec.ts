@@ -21,7 +21,7 @@ test.describe("signing in", () => {
 
     await pair(page, shop.pairingCode);
     await expect(page.getByRole("button", { name: "Demo Cashier" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Demo Owner" })).toHaveCount(0); // no PIN, so not offered
+    await expect(page.getByRole("button", { name: "Demo Owner" })).toBeVisible();
     expect(await scan(page)).toEqual([]);
 
     await page.getByRole("button", { name: "Demo Cashier" }).click();

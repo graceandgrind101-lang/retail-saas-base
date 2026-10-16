@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ADMIN_NAV, ALERT_CATEGORIES, ALERT_RULES, ALERT_STATUSES, MODULE_KEYS, PERMISSION_KEYS, POS_TABS, SYSTEM_ROLE_KEYS } from "@retail/core";
+import { SETTING_GROUPS, SETTING_KEYS, settingHelpPath, settingLabelPath, ADMIN_NAV, ALERT_CATEGORIES, ALERT_RULES, ALERT_STATUSES, MODULE_KEYS, PERMISSION_KEYS, POS_TABS, SYSTEM_ROLE_KEYS } from "@retail/core";
 import { checkLocales } from "./check";
 import {
   ALL_LOCALES,
@@ -58,6 +58,13 @@ describe("every name the system defines has text in every language", () => {
   it("every menu item and POS tab (so a new screen cannot ship without its name)", () => {
     for (const item of ADMIN_NAV) expect(has(`nav.${item.key}`), item.key).toEqual([]);
     for (const tab of POS_TABS) expect(has(`pos.tabs.${tab.key}`), tab.key).toEqual([]);
+  });
+  it("every setting has a label and a help text, and every section a title", () => {
+    for (const key of SETTING_KEYS) {
+      expect(has(settingLabelPath(key)), `${key} label`).toEqual([]);
+      expect(has(settingHelpPath(key)), `${key} help`).toEqual([]);
+    }
+    for (const group of SETTING_GROUPS) expect(has(`settings.groups.${group}`), group).toEqual([]);
   });
   it("has no text for a key that is not defined (guards the test itself)", () => {
     expect(has("permissions.nope.nope")).toEqual(["am", "en"]);

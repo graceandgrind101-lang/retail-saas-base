@@ -33,16 +33,17 @@ Open http://localhost:3000/sign-in. Stop with Ctrl+C.
 2. Open **Alerts** (menu, or the bell). There are two sample alerts. Tap one: **Mark as seen**, then **Resolve** with a note. Tap **Show closed alerts** to see it kept. A closed alert cannot be reopened.
 3. Press **Ctrl+K**: a search box opens. Type `ale` and press Enter.
 4. Open the shop name (top left) for **Language** (English / አማርኛ), **Calendar** (Gregorian / Ethiopian), **Theme** (Same as the device / Light / Dark) and **Sign out**.
-5. Make the window narrow (see "Seeing it as a phone" below): the sidebar becomes tabs at the bottom.
+5. Open **Configuration, Settings** (sidebar; on a phone: More, then Settings). Sections are tabs. Change **Inventory, Low-stock level**, press **Save**, reload: it stays. Open **Payment accounts**: everything is greyed with a lock and "Contact support to change this" (locked on purpose). Try **Business profile, Shop phone number**: Save asks for your PIN (**2580**); a wrong PIN saves nothing. Set **Language and calendar, Default language** to አማርኛ and the whole app switches (for anyone who has not chosen their own).
+6. Make the window narrow (see "Seeing it as a phone" below): the sidebar becomes tabs at the bottom.
 
 **As a till (cashier or manager with a PIN)**
 1. Sign out first. On the sign-in page type the **code** `dev:seed` printed, any device name (for example Counter 1) and press **Connect**.
-2. Pick **Demo Cashier** and enter the PIN **7391** (Demo Manager: **4829**). Wrong PINs show a message; five wrong in a row lock the person and the till for 15 minutes, and raise an alert you can see as the owner.
+2. Pick **Demo Cashier** and enter the PIN **7391** (Demo Manager: **4829**, Demo Owner: **2580**). Wrong PINs show a message; five wrong in a row lock the person and the till for 15 minutes, and raise an alert you can see as the owner.
 3. You are in the till: the header names the device and the cashier; tabs **Sell, Today, Parked, More**. The sale screen itself is the next phase, so these pages say so.
 4. **Lock** returns to the PIN screen. Leave the till alone for 3 minutes and it locks itself and says why.
 5. As the manager, open **More**, then **Open the admin app**. A cashier sees only what a cashier may: no Alerts page.
 
-Things that are **not built yet** (so do not look for them): selling, products, stock, payments, customers, reports, the staff / devices / settings screens, signing in with an email or Google account. They are in the plan, in that order.
+Things that are **not built yet** (so do not look for them): selling, products, stock, payments, customers, reports, the staff and devices screens, signing in with an email or Google account. They are in the plan, in that order.
 
 ## Seeing it as a phone
 

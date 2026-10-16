@@ -382,6 +382,84 @@
   font: inherit;
 }
 
+/* ── settings screen ─────────────────────────────────── */
+.settings-search input {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+}
+.setting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+}
+.setting[data-state="locked"] {
+  background: var(--surface-2);
+}
+.setting-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.setting-label {
+  font-weight: 700;
+}
+.setting-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-1);
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+  font-size: var(--font-size-1);
+  font-weight: 700;
+}
+.setting-note,
+.setting-help,
+.setting-support,
+.setting-group {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-1);
+}
+.setting input[type="text"],
+.setting input[type="number"],
+.setting select {
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+}
+.setting input[type="checkbox"] {
+  width: var(--tap);
+  height: var(--tap);
+}
+.setting input:disabled,
+.setting select:disabled {
+  opacity: 0.6;
+}
+.setting-localized {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.setting-localized label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-1);
+}
+
 /* ── wide screens ────────────────────────────────────── */
 @media (min-width: 1024px) {
   .shell-tabs:not([data-always="true"]) {

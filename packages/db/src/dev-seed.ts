@@ -12,7 +12,7 @@ import { provisionTenant } from "./tenants";
  * manager and a cashier (who sign in with a PIN on a connected device), and two sample alerts.
  */
 export const DEMO_SLUG = "demo";
-export const DEMO_PINS = { manager: "4829", cashier: "7391" } as const;
+export const DEMO_PINS = { owner: "2580", manager: "4829", cashier: "7391" } as const;
 
 export interface DemoSeed {
   tenantId: string;
@@ -53,7 +53,7 @@ export async function seedDemoShop(sql: Sql, peppers: { devicePepper: string; pi
                 ${pinHash ? new Date().toISOString() : null}::timestamptz)`;
       return id;
     };
-    await person("Demo Owner", "owner", { account: DEV_DEMO_OWNER_ACCOUNT_ID });
+    await person("Demo Owner", "owner", { account: DEV_DEMO_OWNER_ACCOUNT_ID, pin: DEMO_PINS.owner });
     await person("Demo Manager", "manager", { pin: DEMO_PINS.manager });
     await person("Demo Cashier", "cashier", { pin: DEMO_PINS.cashier });
 
@@ -67,8 +67,12 @@ export async function seedDemoShop(sql: Sql, peppers: { devicePepper: string; pi
     branchId = branch?.id as string;
   }
 
-  const [owner] = await sql<{ id: string }[]>`select id from app.staff where tenant_id = ${tenantId} and auth_user_id = ${DEV_DEMO_OWNER_ACCOUNT_ID}`;
+  const [owner] = await sql<{ id: string; pin_hash: string | null }[]>`select id, pin_hash from app.staff where tenant_id = ${tenantId} and auth_user_id = ${DEV_DEMO_OWNER_ACCOUNT_ID}`;
   if (!owner) throw new Error("the demo shop exists but has no demo owner; run `pnpm db:reset` and seed again");
+  if (!owner.pin_hash) {
+    // a demo shop made before the owner had a PIN: give the owner the demo PIN (needed to save a sensitive setting)
+    await sql`update app.staff set pin_hash = ${await hashPin(DEMO_PINS.owner, peppers.pinPepper)}, pin_set_at = now() where tenant_id = ${tenantId} and id = ${owner.id}`;
+  }
 
   const code = generatePairingCode();
   await sql`

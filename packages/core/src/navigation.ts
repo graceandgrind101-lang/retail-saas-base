@@ -45,7 +45,7 @@ export const ADMIN_NAV: readonly NavItem[] = [
 
   { key: "staff", module: "core", path: "/staff", permission: "staff:view", configuration: true, built: false },
   { key: "devices", module: "core", path: "/devices", permission: "device:manage", configuration: true, built: false },
-  { key: "settings", module: "core", path: "/settings", permission: "settings:view", configuration: true, built: false },
+  { key: "settings", module: "core", path: "/settings", permission: "settings:view", configuration: true, built: true },
 ];
 
 export interface NavSection {

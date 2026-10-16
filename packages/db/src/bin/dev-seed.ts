@@ -48,7 +48,7 @@ try {
   console.log(`2. Open ${appUrl}/sign-in`);
   console.log(`   - "Sign in as the demo owner" opens the admin app as the owner.`);
   console.log(`   - To try a till: connect a device with the code  ${seed.pairingCode}  (valid 10 minutes, once),`);
-  console.log(`     then sign in with a PIN:  Demo Manager ${seed.pins.manager}   Demo Cashier ${seed.pins.cashier}`);
+  console.log(`     then sign in with a PIN:  Demo Owner ${seed.pins.owner}   Demo Manager ${seed.pins.manager}   Demo Cashier ${seed.pins.cashier}`);
   console.log(`   Run this command again for a fresh code.\n`);
 } finally {
   await sql.end();

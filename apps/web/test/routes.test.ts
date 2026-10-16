@@ -149,6 +149,7 @@ describe("route files export only what Next allows", () => {
       "devices/unlock/route.ts",
       "preferences/route.ts",
       "roles/permissions/route.ts",
+      "settings/route.ts",
       "staff/overrides/remove/route.ts",
       "staff/overrides/route.ts",
       "staff/pin/route.ts",

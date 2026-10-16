@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { settingValue } from "@retail/core";
 import { PosShell } from "@/components/shell/pos-shell";
 import { loadShellContext } from "@/lib/shell/context";
 import { posIdleSeconds } from "@/lib/shell/idle";
@@ -11,7 +12,7 @@ export default async function PosLayout({ children }: { children: React.ReactNod
   if (!ctx.device) redirect("/");
   const props = await shellProps(ctx);
   return (
-    <PosShell deviceName={ctx.device.name} staffName={props.staffName} alerts={props.alerts} idleSeconds={posIdleSeconds(process.env)} locale={props.locale} calendar={props.calendar}>
+    <PosShell deviceName={ctx.device.name} staffName={props.staffName} alerts={props.alerts} idleSeconds={posIdleSeconds(process.env, settingValue(ctx.settings, "security.pos_idle_lock_seconds"))} locale={props.locale} calendar={props.calendar}>
       {children}
     </PosShell>
   );

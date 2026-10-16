@@ -28,6 +28,24 @@ describe("how long the till may sit untouched", () => {
   });
 });
 
+describe("which idle time the till uses: the deployment's override, then the shop's setting, then 3 minutes", () => {
+  it("the override beats the setting", () => {
+    expect(posIdleSeconds({ POS_IDLE_LOCK_SECONDS: "5" }, 600)).toBe(5);
+    expect(posIdleSeconds({ POS_IDLE_LOCK_SECONDS: "0" }, 600)).toBe(0);
+  });
+  it("without an override the shop's setting is used (0 turns the lock off)", () => {
+    expect(posIdleSeconds({}, 600)).toBe(600);
+    expect(posIdleSeconds({}, 0)).toBe(0);
+    expect(posIdleSeconds({}, 86_400)).toBe(86_400);
+  });
+  it("a setting or an override that makes no sense is skipped", () => {
+    for (const bad of [-1, 1.5, 86_401, "60", null, undefined, Number.NaN]) expect(posIdleSeconds({}, bad), String(bad)).toBe(180);
+    expect(posIdleSeconds({ POS_IDLE_LOCK_SECONDS: "abc" }, 600)).toBe(600);
+    expect(posIdleSeconds({ POS_IDLE_LOCK_SECONDS: "99999999" }, 600)).toBe(600);
+    expect(posIdleSeconds({ POS_IDLE_LOCK_SECONDS: "" }, 600)).toBe(600);
+  });
+});
+
 describe("the developer sign-in", () => {
   let admin: AdminDb;
   let db: TenantDb;

@@ -8,6 +8,7 @@ export * from "./permissions";
 export * from "./preferences";
 export * from "./rls";
 export * from "./schema";
+export * from "./settings";
 export * from "./sign-in";
 export * from "./tenant-info";
 export type { ConnectionOptions, Database } from "./internal/connect";
