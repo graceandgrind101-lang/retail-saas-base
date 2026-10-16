@@ -110,3 +110,9 @@ The Supabase CLI and the GitHub CLI are not installed (Docker now is). Git pushe
 - Seeding the role templates writes about 90 audit rows per new shop (one per grant); the provisioning test computes the count from the templates.
 - Tests that suspend "the owner" now need a second owner; a shared helper adds one.
 - The permission registry holds keys of modules that are not built yet (dube, storefront, manufacturing, transfers), so owners get them automatically when those modules are switched on.
+
+## Findings from building A10 (alerts)
+- Alerts follow the same pattern as the permission tables: functions only, enforced by the `current_user` trigger, and listed in the leak suite's "functions only" set.
+- `created_at` is immutable, so ordering tests insert an old alert directly rather than editing one.
+- The lockout alert is raised where the lock is decided (inside `pin_attempt`), in the same transaction as the lock, so a lock without an alert cannot happen.
+- Query strings are parsed strictly: an unknown, repeated or malformed parameter is a 400, never silently ignored.

@@ -160,6 +160,8 @@ The Supabase Data API exposes **none** of these (M3).
 **`app.alerts`** (in Phase A because PIN lockouts and failed logins already raise alerts)
 `id` · `tenant_id` · `branch_id null` · `category enum(fraud, suspicion, error, alert, message, info)` · `rule_key text` · `severity smallint` · `entity_type text null` · `entity_id uuid null` · `payload jsonb` · `status enum(new, ack, resolved, dismissed)` · `assignee_staff_id null` · `resolution_note text null` · `resolved_by` · `resolved_at`. Index `(tenant_id, status, category, created_at desc)`.
 
+**As built (A10).** Migrations 0011 (the table) and 0012 (functions). `app.alerts` as above with checks on category, status, severity, rule-key shape, payload being an object, entity type and id travelling together, and "closed means closed by someone at a time". `private.raise_alert` (system), `app.raise_alert` (the signed-in request), `app.set_alert_status` (needs `alert:resolve`), `private.alert_transition_ok` (kept identical to core's `canTransitionAlert` by a test). `private.pin_attempt` now raises the lockout alerts. Direct writes by the shop's own login are refused. See PLAN D34.
+
 ### 3.3 `audit` schema
 
 **`audit.log`**

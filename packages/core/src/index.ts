@@ -1,5 +1,6 @@
 // Pure business rules: money, pricing, permissions, receipt parsing. No I/O. 100% unit-tested (PLAN.md §2.1).
 // Anything that touches the outside world (env, db, network) takes its inputs as arguments.
+export * from "./alerts";
 export * from "./auth";
 export * from "./encoding";
 export * from "./env";

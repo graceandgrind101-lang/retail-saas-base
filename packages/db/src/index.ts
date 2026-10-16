@@ -1,5 +1,6 @@
 // Tenant-facing database access. Nothing exported here can run an unscoped query.
 // Platform work (console, jobs, scripts) uses "@retail/db/admin" instead.
+export * from "./alerts";
 export * from "./audit";
 export * from "./devices";
 export * from "./errors";

@@ -133,6 +133,8 @@ describe("route files export only what Next allows", () => {
 
   it("finds every API route (add new ones here on purpose)", () => {
     expect(files.map((f) => relative(apiDir, f).replaceAll("\\", "/")).sort()).toEqual([
+      "alerts/route.ts",
+      "alerts/status/route.ts",
       "auth/invite/accept/route.ts",
       "auth/me/route.ts",
       "auth/session/route.ts",

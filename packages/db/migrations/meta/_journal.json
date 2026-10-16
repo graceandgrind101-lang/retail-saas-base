@@ -78,6 +78,20 @@
       "when": 1792159621526,
       "tag": "0010_permission_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792163018237,
+      "tag": "0011_alerts",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792163020430,
+      "tag": "0012_alert_functions",
+      "breakpoints": true
     }
   ]
 }
