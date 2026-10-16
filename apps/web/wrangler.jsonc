@@ -1,0 +1,11 @@
+{
+  // Cloudflare Workers deployment of the shop app. No secrets here: they are set with
+  // `wrangler secret put` (or the dashboard) and never written into a file.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "retail-saas-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "observability": { "enabled": true }
+}

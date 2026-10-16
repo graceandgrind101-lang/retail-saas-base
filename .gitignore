@@ -4,6 +4,7 @@ node_modules/
 .turbo/
 .open-next/
 .wrangler/
+.dev.vars
 dist/
 coverage/
 *.tsbuildinfo

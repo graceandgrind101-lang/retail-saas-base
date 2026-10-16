@@ -9,6 +9,8 @@ allowBuilds:
   "@parcel/watcher": false
   "@swc/core": false
   "@playwright/test": false
+  workerd: false
+  sharp: false
 
 catalog:
   # framework
@@ -46,6 +48,9 @@ catalog:
   # e2e
   "@playwright/test": 1.64.1
   "@axe-core/playwright": 4.14.0
+  # deploy (Cloudflare Workers)
+  "@opennextjs/cloudflare": 1.20.12
+  wrangler: 4.151.1
 
 minimumReleaseAgeExclude:
   - "@next/env@16.4.2"
@@ -63,3 +68,5 @@ minimumReleaseAgeExclude:
   - eslint-config-next@16.4.2
   - next@16.4.2
   - vitest@5.0.5
+  - miniflare@5.20261012.1-beta
+  - wrangler@4.151.1

@@ -161,3 +161,9 @@ The Supabase CLI and the GitHub CLI are not installed (Docker now is). Git pushe
 - A pairing code is letters and digits, so a test must not assume a digit is present (it passed by luck once).
 - A database test searched the whole alert JSON for the digits of a PIN and failed once in a while on random ids and timestamps; ids and timestamps are now removed before the search.
 - Mutation testing: 4 weakenings of the new database rules (manage check, archived-is-final, audit permission, status trigger), all caught.
+
+## Findings from building A16 (exit pass, so far)
+- OpenNext for Cloudflare (`@opennextjs/cloudflare` 1.20.12, `wrangler` 4.151.1, both pinned in the catalog) needs peer `next` 16.4.1 or later, which we have. `workerd` and `sharp` install scripts are switched off (`allowBuilds`); the binaries come as packages.
+- `opennextjs-cloudflare build` fails on Windows with `EPERM ... symlink` unless symlinks are allowed (Developer Mode or administrator). The bundle is therefore built in a CI job on Linux; deploying from Windows needs Developer Mode on, or deploying from CI.
+- ESLint must ignore `.open-next/` and `.wrangler/` (generated bundles), otherwise lint fails after a build.
+- Still unverified until the first deploy: whether `instrumentation.ts` `register()` runs on Workers (the first request validates the environment anyway, so a bad environment still fails closed), and Worker size and CPU limits (PLAN.md §2.2 expects the paid plan).

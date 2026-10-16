@@ -7,6 +7,9 @@
     "dev": "pnpm --filter @retail/i18n generate && next dev",
     "build": "pnpm --filter @retail/i18n generate && next build",
     "start": "next start",
+    "cf:build": "pnpm --filter @retail/i18n generate && opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare deploy",
     "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
@@ -17,14 +20,17 @@
     "@retail/db": "workspace:*",
     "@retail/i18n": "workspace:*",
     "@retail/ui": "workspace:*",
+    "jose": "catalog:",
     "next": "catalog:",
+    "next-intl": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "zod": "catalog:",
-    "jose": "catalog:",
-    "next-intl": "catalog:"
+    "zod": "catalog:"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:",
+    "@opennextjs/cloudflare": "catalog:",
+    "@playwright/test": "catalog:",
     "@retail/config": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
@@ -33,7 +39,6 @@
     "eslint-config-next": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
-    "@playwright/test": "catalog:",
-    "@axe-core/playwright": "catalog:"
+    "wrangler": "catalog:"
   }
 }

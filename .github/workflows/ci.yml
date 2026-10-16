@@ -99,3 +99,27 @@ jobs:
       - run: pnpm --filter @retail/i18n generate
       - run: pnpm --filter @retail/web build
       - run: pnpm --filter @retail/web exec playwright test
+
+  # The app packaged for Cloudflare Workers (OpenNext). Proves the bundle builds on Linux (it cannot be
+  # built on Windows without symlink rights). Nothing is deployed from here: that needs secrets and
+  # is a deliberate step (docs/GUIDE.md, deploy section).
+  workers-bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TURBO_TELEMETRY_DISABLED: "1"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @retail/web cf:build
+      - name: Bundle size (a Worker may not exceed the plan's limit)
+        run: |
+          du -sh apps/web/.open-next/worker.js
+          ls -la apps/web/.open-next/
+

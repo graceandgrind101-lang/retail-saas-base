@@ -16,6 +16,7 @@
     "generate": "drizzle-kit generate",
     "check:db-security": "tsx src/bin/check-db-security.ts",
     "anchor-audit": "tsx src/bin/anchor-audit.ts",
+    "verify-audit": "tsx src/bin/verify-audit.ts",
     "tenant:create": "tsx src/bin/create-tenant.ts",
     "dev:seed": "tsx src/bin/dev-seed.ts"
   },

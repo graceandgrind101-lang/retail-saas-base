@@ -23,6 +23,7 @@
     "db:migrate": "pnpm --filter @retail/db migrate",
     "db:check": "pnpm --filter @retail/db check:db-security",
     "db:anchor": "pnpm --filter @retail/db anchor-audit",
+    "db:verify-audit": "pnpm --filter @retail/db verify-audit",
     "tenant:create": "pnpm --filter @retail/db tenant:create",
     "dev:seed": "pnpm --filter @retail/db dev:seed",
     "dev:setup": "node scripts/dev-setup.mjs"
