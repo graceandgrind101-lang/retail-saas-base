@@ -60,6 +60,14 @@
 - **A shop's request that writes should open with `{ write: true }`.** Without it, the first audited write takes the tenant lock after row locks are already held, and two writers touching rows in opposite orders can deadlock (SQLSTATE 40P01). Demonstrated in a test, then fixed in another.
 - **Windows shell notes:** PowerShell strips double quotes from arguments passed to `docker exec`, so SQL containing JSON must be piped from a file; Python's `subprocess` needs `encoding="utf-8"` to read Vitest's output.
 
+## Findings from building A6 (tenancy)
+
+- **A drift test must read the same file list as the tool it guards.** `schema-drift.test.ts` first hard-coded which schema files to compare, so a new table file (`branches.ts`) made it report a phantom "DROP TABLE". It now derives the list from `drizzle.config.ts`.
+- **A row-level BEFORE trigger that returns NULL cancels the row's operation.** The read-only trigger therefore must be statement-level (the security check pins `tgtype` 30, and a mutation that made it per-row is caught).
+- **`UNIQUE NULLS NOT DISTINCT`** (Postgres 15+) is needed for "one platform default per key", because a plain unique constraint treats every NULL as different. drizzle-kit 0.31 generates it from `.nullsNotDistinct()`.
+- **Custom migrations after generated ones:** `drizzle-kit generate` (tables) then `generate --custom` (functions, triggers, securing) keeps the order explicit: 0003 creates `app.branches`, 0004 secures it by re-running `secure_tenant_table()` over every existing tenant table. Every new version of that function must end the same way.
+- **CLI tests on Windows:** `spawnSync` with `shell: true` does not quote arguments, so test arguments must not contain spaces.
+
 ## Local development database
 
 - **Image:** `supabase/postgres:17.11.0.003` (pinned; 17.11.0.004 existed but was two days old). Same Postgres build as Supabase cloud, so roles (`anon`, `authenticated`, `service_role`) and pgTAP behave as in production. Started with `pnpm db:up` from `infra/dev-db/compose.yaml`, bound to `127.0.0.1:54322` only.

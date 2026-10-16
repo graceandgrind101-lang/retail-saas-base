@@ -29,6 +29,7 @@ interface TableRow {
   has_tenant_fk: boolean;
   has_touch_trigger: boolean;
   has_audit_trigger: boolean;
+  has_writable_trigger: boolean;
   public_has_access: boolean;
   outside_roles_with_access: string[] | null;
   authenticated_extra_privs: boolean;
@@ -67,6 +68,11 @@ export async function checkDatabaseSecurity(sql: Sql): Promise<Violation[]> {
       exists (select 1 from pg_trigger g
               where g.tgrelid = c.oid and g.tgname = 'audit_row' and g.tgenabled = 'O'
                 and g.tgtype = 29 and g.tgfoid = 'audit.record_row_change'::regproc) as has_audit_trigger,
+      -- BEFORE, once per statement, insert + update + delete (tgtype 2 + 4 + 8 + 16 = 30):
+      -- a paused or closed shop's session cannot change anything
+      exists (select 1 from pg_trigger g
+              where g.tgrelid = c.oid and g.tgname = 'enforce_writable' and g.tgenabled = 'O'
+                and g.tgtype = 30 and g.tgfoid = 'private.assert_tenant_writable'::regproc) as has_writable_trigger,
       exists (select 1 from aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) x
               where x.grantee = 0) as public_has_access,
       -- roles outside the policy that can still touch the table (inherited rights count)
@@ -99,6 +105,7 @@ export async function checkDatabaseSecurity(sql: Sql): Promise<Violation[]> {
     if (!table.rls) add(scope, "row-level security is not enabled");
     if (!table.forced) add(scope, "row-level security is not FORCED");
     if (!table.has_touch_trigger) add(scope, "touch_updated_at trigger is missing or disabled");
+    if (!table.has_writable_trigger) add(scope, "enforce_writable trigger is missing or disabled: a paused shop could still change this table");
     if (!table.has_audit_trigger) add(scope, "audit_row trigger is missing, disabled, or not AFTER INSERT/UPDATE/DELETE per row");
     if (table.public_has_access) add(scope, "PUBLIC has privileges on this table");
     for (const role of table.outside_roles_with_access ?? []) add(scope, `role ${role} has privileges on this table`);

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { char, check, jsonb, pgSchema, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, char, check, jsonb, pgSchema, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 import { RESERVED_TENANT_SLUGS, type LocalizedText } from "@retail/core";
 
 /**
@@ -52,3 +52,47 @@ export const tenants = platformSchema.table(
 
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
+
+/**
+ * Which modules a shop has switched on. Whether a key MEANS something is decided by the
+ * registry in @retail/core; the database only checks the key is well formed, so adding a
+ * module needs no migration. Shop sessions read their own row set through `app.my_modules()`.
+ */
+export const tenantModules = platformSchema.table(
+  "tenant_modules",
+  {
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    moduleKey: text("module_key").notNull(),
+    enabled: boolean("enabled").notNull().default(true),
+    changedAt: timestamp("changed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.moduleKey] }),
+    check("tenant_modules_key_format", sql`${t.moduleKey} ~ '^[a-z][a-z_]*$'`),
+  ],
+);
+
+export const settingState = platformSchema.enum("setting_state", ["editable", "locked", "hidden"]);
+
+/**
+ * Who may change which setting (PLAN.md D7, §4). A row with a null tenant is the platform
+ * default; a row for one shop overrides it. Lookup order: the shop's row, then the default,
+ * then the default written in the settings registry in code.
+ */
+export const settingPolicies = platformSchema.table(
+  "setting_policies",
+  {
+    id: uuid("id").primaryKey(),
+    tenantId: uuid("tenant_id").references(() => tenants.id),
+    key: text("key").notNull(),
+    state: settingState("state").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // NULLS NOT DISTINCT: there can be only one platform-default row per key, not one per NULL.
+    unique("setting_policies_tenant_key_unique").on(t.tenantId, t.key).nullsNotDistinct(),
+    check("setting_policies_key_format", sql`${t.key} ~ '^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$'`),
+  ],
+);

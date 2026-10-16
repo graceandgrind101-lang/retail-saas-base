@@ -6,6 +6,8 @@
 import type { Sql } from "postgres";
 import { connect, type ConnectionOptions, type Database } from "./internal/connect";
 
+export * from "./tenants";
+
 export interface AdminDb {
   /** Typed Drizzle handle. Connected as the database owner: row-level security does NOT apply. */
   db: Database;

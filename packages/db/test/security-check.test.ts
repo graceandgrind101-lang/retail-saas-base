@@ -273,6 +273,24 @@ describe("the check catches a weakened audit log (each change restored afterward
     expect(has(problems, "audit_row trigger is missing")).toBe(true);
   });
 
+  it("a tenant table with no read-only enforcement for paused shops", async () => {
+    const problems = await withBrokenTable("chk_no_writable", (n) => admin.unsafe(`drop trigger enforce_writable on app.${n}`).then(() => undefined));
+    expect(has(problems, "enforce_writable trigger is missing")).toBe(true);
+  });
+
+  it("a tenant table whose read-only trigger is switched off", async () => {
+    const problems = await withBrokenTable("chk_writable_off", (n) => admin.unsafe(`alter table app.${n} disable trigger enforce_writable`).then(() => undefined));
+    expect(has(problems, "enforce_writable trigger is missing")).toBe(true);
+  });
+
+  it("a tenant table whose read-only trigger only covers inserts", async () => {
+    const problems = await withBrokenTable("chk_writable_insert_only", async (n) => {
+      await admin.unsafe(`drop trigger enforce_writable on app.${n}`);
+      await admin.unsafe(`create trigger enforce_writable before insert on app.${n} for each statement execute function private.assert_tenant_writable()`);
+    });
+    expect(has(problems, "enforce_writable trigger is missing")).toBe(true);
+  });
+
   it("authenticated allowed to INSERT into the audit log", async () => {
     const problems = await loosen("grant insert on audit.log to authenticated", "revoke insert on audit.log from authenticated", "audit.log");
     expect(has(problems, "authenticated has INSERT")).toBe(true);

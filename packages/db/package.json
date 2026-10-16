@@ -14,7 +14,8 @@
     "migrate": "tsx src/bin/migrate.ts",
     "generate": "drizzle-kit generate",
     "check:db-security": "tsx src/bin/check-db-security.ts",
-    "anchor-audit": "tsx src/bin/anchor-audit.ts"
+    "anchor-audit": "tsx src/bin/anchor-audit.ts",
+    "tenant:create": "tsx src/bin/create-tenant.ts"
   },
   "devDependencies": {
     "@retail/config": "workspace:*",

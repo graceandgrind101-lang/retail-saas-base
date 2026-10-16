@@ -10,7 +10,7 @@ import { defineConfig } from "drizzle-kit";
 // filters what drizzle-kit reads from a live database.) A test guards both directions.
 export default defineConfig({
   dialect: "postgresql",
-  schema: ["./src/schema/platform.ts", "./src/schema/tenant-table.ts"],
+  schema: ["./src/schema/platform.ts", "./src/schema/tenant-table.ts", "./src/schema/branches.ts"],
   out: "./migrations",
   schemaFilter: ["platform", "app"],
 });

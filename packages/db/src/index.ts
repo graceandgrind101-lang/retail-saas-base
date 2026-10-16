@@ -3,4 +3,5 @@
 export * from "./audit";
 export * from "./rls";
 export * from "./schema";
+export * from "./tenant-info";
 export type { ConnectionOptions, Database } from "./internal/connect";

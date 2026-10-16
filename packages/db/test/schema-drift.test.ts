@@ -2,8 +2,6 @@ import { readFileSync, readdirSync } from "node:fs";
 import { generateDrizzleJson, generateMigration } from "drizzle-kit/api";
 import { describe, expect, it } from "vitest";
 import config from "../drizzle.config";
-import * as platform from "../src/schema/platform";
-import * as tenantTable from "../src/schema/tenant-table";
 
 // Schema drift is what broke the single-tenant reference app: `schema.sql` no longer matched
 // the real database. These tests make that impossible here: a change to the TypeScript tables
@@ -15,14 +13,25 @@ const latestSnapshotFile = readdirSync(metaDir)
   .sort()
   .at(-1);
 
+// The files drizzle-kit reads, taken from the same list drizzle.config.ts uses, so this test
+// can never drift from the config (a new table file is picked up automatically).
+const configured = (Array.isArray(config.schema) ? config.schema : [config.schema ?? ""]).map((p) => p.split("/").at(-1) ?? "");
+
 describe("schema drift", () => {
   it("has a snapshot for the latest migration", () => {
     expect(latestSnapshotFile).toBeDefined();
   });
 
+  it("reads at least the platform and tenant-table definitions", () => {
+    expect(configured).toEqual(expect.arrayContaining(["platform.ts", "tenant-table.ts"]));
+  });
+
   it("the TypeScript tables match the latest migration snapshot (no migration is missing)", async () => {
     const snapshot = JSON.parse(readFileSync(new URL(latestSnapshotFile ?? "", metaDir), "utf8"));
-    const current = await generateDrizzleJson({ ...platform, ...tenantTable });
+    const modules = await Promise.all(
+      configured.map((file) => import(`../src/schema/${file.replace(/\.ts$/, "")}`) as Promise<Record<string, unknown>>),
+    );
+    const current = await generateDrizzleJson(Object.assign({}, ...modules));
     const statements = await generateMigration(snapshot, current);
     expect(statements, "run `pnpm --filter @retail/db generate` and commit the new migration").toEqual([]);
   });

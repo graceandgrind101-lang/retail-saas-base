@@ -77,9 +77,15 @@ The Supabase Data API exposes **none** of these (M3).
 
 `paused` = read-only access plus export, never deletion (PLAN §7.16).
 
-**`platform.tenant_modules`**: `tenant_id` · `module_key text` (pos, inventory, payments, dube, …) · `enabled bool` · `changed_at` · PK `(tenant_id, module_key)`
+**As built (A4 and A6):** `slug` is plain `text` with a format check and a list of reserved subdomains (`app`, `console`, `www`, `api`, ...), rather than `citext`, so no extension is needed. `display_name` must be a non-empty JSON object. Shops are never deleted: `tenant_id` foreign keys have no cascade.
 
-**`platform.setting_policies`**: `tenant_id uuid null` (null = platform default) · `key text` · `state enum(editable, locked, hidden)` · `updated_by` · `updated_at`. Lookup order: tenant row → platform row → default in the code registry.
+**Read-only shops (D29).** A `paused` or `closed` shop can read everything and change nothing. A statement-level trigger, `enforce_writable`, attached to every tenant table by `secure_tenant_table()`, refuses INSERT, UPDATE and DELETE (SQLSTATE `25006`) for a session whose tenant context is such a shop, even for a statement that would touch no rows. It restricts only a shop's own session: platform code with no tenant context (support recovering a shop, billing) is not blocked, and `past_due`, `trial`, `pilot` and `active` shops can write. The security check fails the build if any tenant table lacks the trigger.
+
+**`platform.tenant_modules`**: `tenant_id` · `module_key text` · `enabled bool` · `changed_at` · PK `(tenant_id, module_key)`. The database only checks the key's format (`^[a-z][a-z_]*$`); the list of keys that mean something is the registry in `@retail/core`, so adding a module needs no migration.
+
+**`platform.setting_policies`**: `id` · `tenant_id uuid null` (null = platform default) · `key text` (`group.name`, format-checked) · `state enum(editable, locked, hidden)` · `updated_at`. One row per shop per key, and exactly one platform default per key (`UNIQUE NULLS NOT DISTINCT`: a NULL tenant does not count as "different"). Lookup order: tenant row → platform row → default in the code registry. (`updated_by` returns when staff exist, A7.)
+
+**What a shop may know about itself.** `platform` is closed to every tenant-facing role. A shop's session reads its own details through two `SECURITY DEFINER` functions that return only the row of the tenant in the request context: `app.my_tenant()` (id, slug, name, status, industry, plan, timezone, currency; deliberately not the legal name or tax id) and `app.my_modules()` (enabled module keys). Wrappers: `getMyTenant()` and `getEnabledModules()` in `@retail/db`.
 
 **`platform.platform_admins`**: `id` · `auth_user_id unique` · `name` · `role enum(owner, support, onboarder)` · `status` · `created_at`. 2FA is always required.
 
@@ -91,7 +97,9 @@ The Supabase Data API exposes **none** of these (M3).
 
 ### 3.2 `app` schema: tenant core
 
-**`app.branches`**: `id` · `tenant_id` · `name jsonb` · `address text` · `phone text` · `is_default bool` · `archived_at`. Every tenant gets one default branch at creation.
+**`app.branches`**: `id` · `tenant_id` · `name jsonb` · `address text` · `phone text` · `is_default bool` · `archived_at`. Every tenant gets one default branch at creation. As built: the name must be a non-empty JSON object (one language is enough); a partial unique index allows at most one default branch per shop; and a check forbids archiving the default branch, so a shop always has somewhere to sell.
+
+**Creating a shop** (`pnpm tenant:create`, `provisionTenant()` in `@retail/db/admin`): one transaction that writes the shop, its modules (the starter set for its industry unless a list is given), its default branch and a `tenant.created` audit event, so a shop exists completely or not at all. Staff, system roles and the owner's invitation are added to it in A7 and A9, when those tables exist.
 
 **`app.staff`**
 | Column | Type | Notes |

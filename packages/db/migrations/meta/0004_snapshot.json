@@ -1,0 +1,440 @@
+{
+  "id": "59866179-e840-4a03-ac3d-b1e78b006474",
+  "prevId": "c8c243fb-426d-44fe-8ef4-057aa50de4dc",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "platform.setting_policies": {
+      "name": "setting_policies",
+      "schema": "platform",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "state": {
+          "name": "state",
+          "type": "setting_state",
+          "typeSchema": "platform",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "setting_policies_tenant_id_tenants_id_fk": {
+          "name": "setting_policies_tenant_id_tenants_id_fk",
+          "tableFrom": "setting_policies",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "tableTo": "tenants",
+          "schemaTo": "platform",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "setting_policies_tenant_key_unique": {
+          "name": "setting_policies_tenant_key_unique",
+          "columns": [
+            "tenant_id",
+            "key"
+          ],
+          "nullsNotDistinct": true
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "setting_policies_key_format": {
+          "name": "setting_policies_key_format",
+          "value": "\"platform\".\"setting_policies\".\"key\" ~ '^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "platform.tenant_modules": {
+      "name": "tenant_modules",
+      "schema": "platform",
+      "columns": {
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "module_key": {
+          "name": "module_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "changed_at": {
+          "name": "changed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tenant_modules_tenant_id_tenants_id_fk": {
+          "name": "tenant_modules_tenant_id_tenants_id_fk",
+          "tableFrom": "tenant_modules",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "tableTo": "tenants",
+          "schemaTo": "platform",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "tenant_modules_tenant_id_module_key_pk": {
+          "name": "tenant_modules_tenant_id_module_key_pk",
+          "columns": [
+            "tenant_id",
+            "module_key"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "tenant_modules_key_format": {
+          "name": "tenant_modules_key_format",
+          "value": "\"platform\".\"tenant_modules\".\"module_key\" ~ '^[a-z][a-z_]*$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "platform.tenants": {
+      "name": "tenants",
+      "schema": "platform",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "legal_name": {
+          "name": "legal_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tin": {
+          "name": "tin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "industry": {
+          "name": "industry",
+          "type": "industry",
+          "typeSchema": "platform",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "plan_key": {
+          "name": "plan_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "tenant_status",
+          "typeSchema": "platform",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pilot'"
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Africa/Addis_Ababa'"
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ETB'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "paused_at": {
+          "name": "paused_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closed_at": {
+          "name": "closed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tenants_slug_unique": {
+          "name": "tenants_slug_unique",
+          "columns": [
+            "slug"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "tenants_slug_format": {
+          "name": "tenants_slug_format",
+          "value": "\"platform\".\"tenants\".\"slug\" ~ '^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$'"
+        },
+        "tenants_slug_not_reserved": {
+          "name": "tenants_slug_not_reserved",
+          "value": "slug NOT IN ('app', 'console', 'www', 'api', 'admin', 'static', 'assets', 'mail', 'bot', 'verifier', 'status', 'help', 'docs')"
+        },
+        "tenants_display_name_not_empty": {
+          "name": "tenants_display_name_not_empty",
+          "value": "jsonb_typeof(\"platform\".\"tenants\".\"display_name\") = 'object' AND \"platform\".\"tenants\".\"display_name\" <> '{}'::jsonb"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.branches": {
+      "name": "branches",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_default": {
+          "name": "is_default",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "branches_one_default_per_tenant": {
+          "name": "branches_one_default_per_tenant",
+          "columns": [
+            {
+              "expression": "tenant_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"app\".\"branches\".\"is_default\"",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "branches_tenant_id_tenants_id_fk": {
+          "name": "branches_tenant_id_tenants_id_fk",
+          "tableFrom": "branches",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "tableTo": "tenants",
+          "schemaTo": "platform",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "branches_tenant_id_id_unique": {
+          "name": "branches_tenant_id_id_unique",
+          "columns": [
+            "tenant_id",
+            "id"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "branches_name_not_empty": {
+          "name": "branches_name_not_empty",
+          "value": "jsonb_typeof(\"app\".\"branches\".\"name\") = 'object' AND \"app\".\"branches\".\"name\" <> '{}'::jsonb"
+        },
+        "branches_default_not_archived": {
+          "name": "branches_default_not_archived",
+          "value": "NOT (\"app\".\"branches\".\"is_default\" AND \"app\".\"branches\".\"archived_at\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "platform.industry": {
+      "name": "industry",
+      "schema": "platform",
+      "values": [
+        "electronics",
+        "minimarket",
+        "cosmetics",
+        "food",
+        "other"
+      ]
+    },
+    "platform.setting_state": {
+      "name": "setting_state",
+      "schema": "platform",
+      "values": [
+        "editable",
+        "locked",
+        "hidden"
+      ]
+    },
+    "platform.tenant_status": {
+      "name": "tenant_status",
+      "schema": "platform",
+      "values": [
+        "pilot",
+        "trial",
+        "active",
+        "past_due",
+        "paused",
+        "closed"
+      ]
+    }
+  },
+  "schemas": {
+    "platform": "platform",
+    "app": "app"
+  },
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
