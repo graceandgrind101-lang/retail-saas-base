@@ -3,33 +3,37 @@
   "private": true,
   "version": "0.0.0",
   "description": "Multi-tenant retail POS SaaS (brand is config, see PLAN.md D5)",
-  "packageManager": "pnpm@12.11.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "start": "npm run start --workspace=apps/web",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "check:brand": "node scripts/check-no-brand.mjs",
-    "check:i18n": "pnpm --filter @retail/i18n check",
-    "ci": "pnpm check:brand && pnpm check:i18n && pnpm lint && pnpm typecheck && pnpm test",
+    "check:i18n": "npm run check --workspace=@retail/i18n",
+    "ci": "npm run check:brand && npm run check:i18n && npm run lint && npm run typecheck && npm run test",
     "secrets:generate": "node scripts/generate-secrets.mjs",
     "db:up": "docker compose -f infra/dev-db/compose.yaml up -d --wait",
     "db:down": "docker compose -f infra/dev-db/compose.yaml down",
     "db:reset": "docker compose -f infra/dev-db/compose.yaml down -v && docker compose -f infra/dev-db/compose.yaml up -d --wait",
-    "db:migrate": "pnpm --filter @retail/db migrate",
-    "db:check": "pnpm --filter @retail/db check:db-security",
-    "db:anchor": "pnpm --filter @retail/db anchor-audit",
-    "db:verify-audit": "pnpm --filter @retail/db verify-audit",
-    "tenant:create": "pnpm --filter @retail/db tenant:create",
-    "dev:seed": "pnpm --filter @retail/db dev:seed",
+    "db:migrate": "npm run migrate --workspace=@retail/db",
+    "db:check": "npm run check:db-security --workspace=@retail/db",
+    "db:anchor": "npm run anchor-audit --workspace=@retail/db",
+    "db:verify-audit": "npm run verify-audit --workspace=@retail/db",
+    "tenant:create": "npm run tenant:create --workspace=@retail/db",
+    "dev:seed": "npm run dev:seed --workspace=@retail/db",
     "dev:setup": "node scripts/dev-setup.mjs"
   },
   "devDependencies": {
-    "turbo": "catalog:",
-    "typescript": "catalog:"
+    "turbo": "2.11.8",
+    "typescript": "6.0.3"
   }
 }

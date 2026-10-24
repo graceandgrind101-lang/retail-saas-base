@@ -15,15 +15,15 @@
     "check": "tsx scripts/check.ts"
   },
   "devDependencies": {
-    "@retail/config": "workspace:*",
-    "eslint": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:",
-    "tsx": "catalog:",
-    "@types/node": "catalog:"
+    "@retail/config": "*",
+    "eslint": "10.12.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5",
+    "tsx": "4.23.15",
+    "@types/node": "24.19.2"
   },
   "dependencies": {
-    "@retail/core": "workspace:*",
-    "@formatjs/icu-messageformat-parser": "catalog:"
+    "@retail/core": "*",
+    "@formatjs/icu-messageformat-parser": "3.5.21"
   }
 }

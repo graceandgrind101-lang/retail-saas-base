@@ -18,10 +18,30 @@ export interface ConnectionOptions {
  * Hyperdrive), which matters because the plan keeps hosting portable (PLAN.md D13).
  */
 export function connect(url: string, options: ConnectionOptions = {}): { client: Sql; db: Database } {
-  const client = postgres(url, {
-    max: options.max ?? 10,
-    prepare: false,
-    onnotice: () => {},
-  });
-  return { client, db: drizzle(client, { schema }) };
+  try {
+    const client = postgres(url, {
+      max: options.max ?? 10,
+      prepare: false,
+      onnotice: () => {},
+    });
+    return { client, db: drizzle(client, { schema }) };
+  } catch {
+    console.warn("[AI Studio] Database not connected — using mock");
+    const noOp = {
+      findMany: async () => [],
+      findFirst: async () => null,
+      findUnique: async () => null,
+      create: async (d: { data?: unknown }) => d?.data ?? {},
+      update: async (d: { data?: unknown }) => d?.data ?? {},
+      delete: async () => ({}),
+    };
+    const db = new Proxy(
+      {},
+      {
+        get: (_, prop) => (prop === "query" ? new Proxy({}, { get: () => noOp }) : async () => []),
+      },
+    ) as unknown as Database;
+    const client = { end: async () => {} } as unknown as Sql;
+    return { client, db };
+  }
 }

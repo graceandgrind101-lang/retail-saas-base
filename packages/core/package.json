@@ -12,13 +12,13 @@
     "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
-    "@retail/config": "workspace:*",
-    "eslint": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:",
-    "@types/node": "catalog:"
+    "@retail/config": "*",
+    "eslint": "10.12.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5",
+    "@types/node": "24.19.2"
   },
   "dependencies": {
-    "zod": "catalog:"
+    "zod": "4.6.7"
   }
 }

@@ -1,0 +1,8 @@
+{
+  "name": "Retail POS & Store Operations",
+  "description": "Multi-tenant retail point-of-sale and store management platform with role-based permissions, device pairing, and real-time security alerts.",
+  "requestFramePermissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -10,7 +10,16 @@ import "./shell.css";
 // Every page has a title, in the person's language (screen readers announce it first).
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("home");
-  return { title: t("title"), robots: { index: false, follow: false } };
+  const description = "Multi-tenant retail point-of-sale and store management platform with role-based permissions, device pairing, and real-time security alerts.";
+  return {
+    title: t("title"),
+    description,
+    openGraph: {
+      title: "Retail POS & Store Operations",
+      description,
+    },
+    robots: { index: false, follow: false },
+  };
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

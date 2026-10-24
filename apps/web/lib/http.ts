@@ -29,7 +29,18 @@ export function jsonResponse(status: number, body: unknown, headers: Record<stri
 
 /** Requests that change anything must come from our own pages: a form on another site cannot send this. */
 export function requireSameOrigin(request: Request, appUrl: string): void {
-  if (request.headers.get("origin") !== new URL(appUrl).origin) throw new HttpError(403, "bad_origin");
+  const origin = request.headers.get("origin");
+  if (!origin) throw new HttpError(403, "bad_origin");
+  if (origin === new URL(appUrl).origin) return;
+  const fwdHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  if (fwdHost) {
+    try {
+      if (new URL(origin).host === fwdHost.split(",")[0]?.trim()) return;
+    } catch {
+      // ignore malformed origin
+    }
+  }
+  throw new HttpError(403, "bad_origin");
 }
 
 export async function readJsonBody<T>(request: Request, schema: z.ZodType<T>): Promise<T> {

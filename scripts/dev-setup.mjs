@@ -42,15 +42,15 @@ const lines = [
 writeFileSync(envFile, lines.join("\n"), { encoding: "utf8", flag: "wx" });
 console.log("Wrote apps/web/.env.local");
 
-const migrate = spawnSync("pnpm", ["db:migrate"], {
+const migrate = spawnSync("npm", ["run", "db:migrate"], {
   cwd: root,
   stdio: "inherit",
   shell: true,
   env: { ...process.env, DATABASE_ADMIN_URL: process.env.DATABASE_ADMIN_URL ?? ADMIN_URL, APP_DB_PASSWORD: appDbPassword },
 });
 if (migrate.status !== 0) {
-  console.error("\nThe database step failed. Is the local database running? Start it with: pnpm db:up   (Docker Desktop must be open)");
-  console.error("Then delete apps/web/.env.local and run pnpm dev:setup again.");
+  console.error("\nThe database step failed. Is the local database running? Start it with: npm run db:up   (Docker Desktop must be open)");
+  console.error("Then delete apps/web/.env.local and run npm run dev:setup again.");
   process.exit(1);
 }
-console.log("\nDone. Next:  pnpm dev:seed   then   pnpm dev");
+console.log("\nDone. Next:  npm run dev:seed   then   npm run dev");

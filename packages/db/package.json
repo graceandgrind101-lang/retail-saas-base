@@ -21,19 +21,19 @@
     "dev:seed": "tsx src/bin/dev-seed.ts"
   },
   "devDependencies": {
-    "@retail/config": "workspace:*",
-    "eslint": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:",
-    "drizzle-kit": "catalog:",
-    "tsx": "catalog:",
-    "@types/node": "catalog:"
+    "@retail/config": "*",
+    "eslint": "10.12.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5",
+    "drizzle-kit": "0.31.11",
+    "tsx": "4.23.15",
+    "@types/node": "24.19.2"
   },
   "dependencies": {
-    "@retail/core": "workspace:*",
-    "drizzle-orm": "catalog:",
-    "postgres": "catalog:",
-    "zod": "catalog:",
-    "aws4fetch": "catalog:"
+    "@retail/core": "*",
+    "drizzle-orm": "0.45.4",
+    "postgres": "3.4.9",
+    "zod": "4.6.7",
+    "aws4fetch": "1.0.20"
   }
 }
